@@ -9,6 +9,9 @@
 /Assets/ThirdParty/Naninovel*
 /Assets/NaninovelData/Saves*
 
+# Test spreadsheets
+*.xlsx
+
 # Allow third-party dlls
 !*.dll
 
