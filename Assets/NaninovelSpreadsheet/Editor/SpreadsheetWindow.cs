@@ -1,9 +1,7 @@
-﻿using System;
-using System.IO;
-using System.Linq;
+﻿using System.IO;
 using System.Runtime.CompilerServices;
+using System.Text;
 using DocumentFormat.OpenXml.Packaging;
-using DocumentFormat.OpenXml.Spreadsheet;
 using UnityEditor;
 using UnityEngine;
 
@@ -77,10 +75,10 @@ namespace Naninovel.Spreadsheet
             if (pathsValid)
             {
                 if (GUILayout.Button("Export", GUIStyles.NavigationButton))
-                    Export();
+                    try { Export(); } finally { EditorUtility.ClearProgressBar(); }
                 
                 if (GUILayout.Button("Import", GUIStyles.NavigationButton))
-                    Import();
+                    try { Import(); } finally { EditorUtility.ClearProgressBar(); }
             }
             else EditorGUILayout.HelpBox("Spreadsheet path is not valid; make sure it points to an existing .xls or .xlsx file.", MessageType.Error);
 
@@ -90,40 +88,47 @@ namespace Naninovel.Spreadsheet
         private void Export ()
         {
             if (!EditorUtility.DisplayDialog("Export data to the spreadsheet?",
-                "Are you sure you want to export the scenario scripts, managed text and localization data to the spreadsheet?\n\nThe spreadsheet content will be overwritten, existing data could be lost. The effect of this action is permanent and can't be undone, so make sure to backup the spreadsheet file before confirming.", "Export", "Cancel")) return;
+                "Are you sure you want to export the scenario scripts, managed text and localization data to the spreadsheet?\n\nThe spreadsheet content will be overwritten, existing data could be lost. The effect of this action is permanent and can't be undone, so make sure to backup the spreadsheet file before confirming.\n\nIn case the spreadsheet is currently open in another program, close the program before proceeding.", "Export", "Cancel")) return;
 
-            using (var document = SpreadsheetDocument.Open(SpreadsheetPath, false))
+            DisplayProgress(SpreadsheetPath, 0);
+            
+            var document = SpreadsheetDocument.Open(SpreadsheetPath, true);
+            var scriptPaths = Directory.GetFiles(ScriptFolderPath, "*.nani", SearchOption.AllDirectories);
+            for (int pathIdx = 0; pathIdx < scriptPaths.Length; pathIdx++)
             {
-                Debug.Log(GetCellValue(document, "Sheet1", "B2"));
+                var scriptPath = scriptPaths[pathIdx];
+                var scriptName = Path.GetFileNameWithoutExtension(scriptPath);
+                DisplayProgress(scriptName, pathIdx / (float)scriptPaths.Length);
+
+                var assetPath = PathUtils.AbsoluteToAssetPath(scriptPath);
+                var script = AssetDatabase.LoadAssetAtPath<Script>(assetPath);
+                var scriptText = File.ReadAllText(scriptPath, Encoding.UTF8);
+                var textLines = Script.SplitScriptText(scriptText);
+                Debug.Assert(script.Lines.Count == textLines.Length);
+                
+                var sheetName = $"Scripts{scriptPath.Remove(ScriptFolderPath).Replace('\\', '>').Replace('/', '>').Remove(".nani")}";
+                var sheet = document.GetOrAddSheet(sheetName);
+
+                for (int lineIdx = 0; lineIdx < textLines.Length; lineIdx++)
+                {
+                    var textLine = textLines[lineIdx];
+                    var line = script.Lines[lineIdx];
+                    var rowIndex = (uint)lineIdx + 1;
+                    document.SetCellValue(sheet, "A", rowIndex, textLine);
+                    Debug.Log(document.GetCellValue(sheet, "A", rowIndex));
+                }
             }
+            
+            document.Dispose();
+
+            void DisplayProgress (string file, float progress) => EditorUtility.DisplayProgressBar("Exporting To Spreadsheet", $"Processing `{file}`...", progress);
         }
         
         private void Import ()
         {
             if (!EditorUtility.DisplayDialog("Import data from the spreadsheet?",
-                "Are you sure you want to import the spreadsheet data to this project?\n\nAffected scenario scripts, managed text and localization documents will be overwritten, existing data could be lost. The effect of this action is permanent and can't be undone, so make sure to backup the project before confirming.", "Import", "Cancel")) return;
+                "Are you sure you want to import the spreadsheet data to this project?\n\nAffected scenario scripts, managed text and localization documents will be overwritten, existing data could be lost. The effect of this action is permanent and can't be undone, so make sure to backup the project before confirming.\n\nIn case the spreadsheet is currently open in another program, close the program before proceeding.", "Import", "Cancel")) return;
             
-        }
-
-        private static string GetCellValue (SpreadsheetDocument document, string sheetName, string addressName)
-        {
-            var workbookPart = document.WorkbookPart;
-            var sheet = workbookPart.Workbook.Descendants<Sheet>().FirstOrDefault(s => s.Name == sheetName);
-            if (sheet is null) throw new Exception($"Sheet `{sheetName}` not found in `{document}`.");
-
-            var worksheetPart = (WorksheetPart)workbookPart.GetPartById(sheet.Id);
-            var cell = worksheetPart.Worksheet.Descendants<Cell>().FirstOrDefault(c => c.CellReference == addressName);
-            if (cell?.DataType is null || cell.InnerText.Length == 0) return null;
-
-            switch (cell.DataType.Value)
-            {
-                case CellValues.SharedString:
-                    var stringTable = workbookPart.GetPartsOfType<SharedStringTablePart>().FirstOrDefault();
-                    return stringTable?.SharedStringTable.ElementAt(int.Parse(cell.InnerText)).InnerText;
-                case CellValues.Boolean:
-                    return cell.InnerText == "0" ? "FALSE" : "TRUE";
-                default: return null;
-            }
         }
     }
 }
