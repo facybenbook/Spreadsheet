@@ -58,26 +58,25 @@ namespace Naninovel.Spreadsheet
             var sharedStringPart = document.WorkbookPart.GetPartsOfType<SharedStringTablePart>().FirstOrDefault() ??
                                    document.WorkbookPart.AddNewPart<SharedStringTablePart>();
 
-            var index = InsertSharedStringItem(value, sharedStringPart);
+            var index = InsertSharedStringItem();
             var cell = InsertCellInWorksheet();
             cell.CellValue = new CellValue(index.ToString());
             cell.DataType = new EnumValue<CellValues>(CellValues.SharedString);
-            worksheet.Save();
 
-            int InsertSharedStringItem (string text, SharedStringTablePart shareStringPart)
+            int InsertSharedStringItem ()
             {
-                if (shareStringPart.SharedStringTable is null)
-                    shareStringPart.SharedStringTable = new SharedStringTable();
+                if (sharedStringPart.SharedStringTable is null)
+                    sharedStringPart.SharedStringTable = new SharedStringTable();
                 
                 int itemIndex = 0;
-                foreach (var item in shareStringPart.SharedStringTable.Elements<SharedStringItem>())
+                foreach (var item in sharedStringPart.SharedStringTable.Elements<SharedStringItem>())
                 {
-                    if (item.InnerText == text) return itemIndex;
+                    if (item.InnerText == value) return itemIndex;
                     itemIndex++;
                 }
 
-                shareStringPart.SharedStringTable.AppendChild(new SharedStringItem(new Text(text)));
-                shareStringPart.SharedStringTable.Save();
+                sharedStringPart.SharedStringTable.AppendChild(new SharedStringItem(new Text(value)));
+                sharedStringPart.SharedStringTable.Save();
                 return itemIndex;
             }
 
@@ -95,7 +94,7 @@ namespace Naninovel.Spreadsheet
                     sheetData.AppendChild(row);
                 }
 
-                if (row.Elements<Cell>().Any(c => c.CellReference.Value == columnName + rowIndex))
+                if (row.Elements<Cell>().Any(c => c.CellReference.Value == cellReference))
                     return row.Elements<Cell>().First(c => c.CellReference.Value == cellReference);
 
                 var refCell = default(Cell);
@@ -110,7 +109,6 @@ namespace Naninovel.Spreadsheet
 
                 var newCell = new Cell { CellReference = cellReference };
                 row.InsertBefore(newCell, refCell);
-                worksheet.Save();
                 return newCell;
             }
         }

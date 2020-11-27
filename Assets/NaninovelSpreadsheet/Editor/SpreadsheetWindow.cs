@@ -117,6 +117,8 @@ namespace Naninovel.Spreadsheet
                     document.SetCellValue(sheet, "A", rowIndex, textLine);
                     Debug.Log(document.GetCellValue(sheet, "A", rowIndex));
                 }
+                
+                sheet.Save();
             }
             
             document.Dispose();
