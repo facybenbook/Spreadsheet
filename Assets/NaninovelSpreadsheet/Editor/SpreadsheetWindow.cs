@@ -109,13 +109,19 @@ namespace Naninovel.Spreadsheet
                 var sheetName = $"Scripts{scriptPath.Remove(ScriptFolderPath).Replace('\\', '>').Replace('/', '>').Remove(".nani")}";
                 var sheet = document.GetOrAddSheet(sheetName);
 
+                document.SetCellValue(sheet, "A", 1, "Line");
+                document.SetCellValue(sheet, "B", 1, "Text");
+                
                 for (int lineIdx = 0; lineIdx < textLines.Length; lineIdx++)
                 {
                     var textLine = textLines[lineIdx];
                     var line = script.Lines[lineIdx];
-                    var rowIndex = (uint)lineIdx + 1;
+                    var rowIndex = (uint)lineIdx + 2;
                     document.SetCellValue(sheet, "A", rowIndex, textLine);
-                    Debug.Log(document.GetCellValue(sheet, "A", rowIndex));
+                    //Debug.Log(document.GetCellValue(sheet, "A", rowIndex));
+
+                    var composite = new Composite(line, textLine);
+                    Debug.Log($"{composite.Template} -----> {string.Join(",", composite.Args)}");
                 }
                 
                 sheet.Save();
