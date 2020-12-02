@@ -15,7 +15,7 @@ namespace Naninovel.Spreadsheet
     {
         public readonly string Value;
         public readonly string Template;
-        public readonly IReadOnlyCollection<string> Args;
+        public readonly IReadOnlyList<string> Args;
 
         private static readonly string[] emptyArgs = new string[0];
 
@@ -40,7 +40,7 @@ namespace Naninovel.Spreadsheet
 
         private static string BuildPlaceholder (int index) => $"{{{index}}}";
 
-        private static (string template, IReadOnlyCollection<string> args) ParseScriptLine (ScriptLine line, string lineText)
+        private static (string template, IReadOnlyList<string> args) ParseScriptLine (ScriptLine line, string lineText)
         {
             if (line is CommandScriptLine commandLine && commandLine.Command is Command.ILocalizable) 
                 return ParseCommandLine(commandLine, lineText);
@@ -49,7 +49,7 @@ namespace Naninovel.Spreadsheet
             return (lineText, emptyArgs);
         }
         
-        private static (string template, IReadOnlyCollection<string> args) ParseCommandLine (CommandScriptLine line, string lineText)
+        private static (string template, IReadOnlyList<string> args) ParseCommandLine (CommandScriptLine line, string lineText)
         {
             var args = new List<string>();
             var templateBuilder = new StringBuilder(lineText.GetBefore(" ")).Append(" ");
@@ -60,7 +60,7 @@ namespace Naninovel.Spreadsheet
                 var parameter = field.GetValue(line.Command) as ICommandParameter;
                 if (parameter is null || !parameter.HasValue) continue;
                 
-                var name = field.GetCustomAttribute<Command.CommandAliasAttribute>()?.Alias ?? field.Name;
+                var name = field.GetCustomAttribute<Command.CommandAliasAttribute>()?.Alias ?? field.Name.FirstToLower();
                 if (name != Command.NamelessParameterAlias)
                     templateBuilder.Append(name).Append(Command.ParameterAssignLiteral);
 
@@ -76,7 +76,7 @@ namespace Naninovel.Spreadsheet
             return (templateBuilder.ToString(), args);
         }
         
-        private static (string template, IReadOnlyCollection<string> args) ParseGenericLine (string line)
+        private static (string template, IReadOnlyList<string> args) ParseGenericLine (string line)
         {
             var args = new List<string>();
             var templateBuilder = new StringBuilder();
@@ -113,7 +113,7 @@ namespace Naninovel.Spreadsheet
             }
         }
         
-        private static (string template, IReadOnlyCollection<string> args) ParseManagedText (string line)
+        private static (string template, IReadOnlyList<string> args) ParseManagedText (string line)
         {
             if (string.IsNullOrWhiteSpace(line) || !line.Contains(ManagedTextUtils.RecordIdLiteral))
                 return (line, emptyArgs);

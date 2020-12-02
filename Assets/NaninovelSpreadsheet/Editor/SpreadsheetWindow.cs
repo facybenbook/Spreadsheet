@@ -1,7 +1,10 @@
-﻿using System.IO;
+﻿using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using DocumentFormat.OpenXml.Packaging;
+using DocumentFormat.OpenXml.Spreadsheet;
 using UnityEditor;
 using UnityEngine;
 
@@ -107,23 +110,32 @@ namespace Naninovel.Spreadsheet
                 Debug.Assert(script.Lines.Count == textLines.Length);
                 
                 var sheetName = $"Scripts{scriptPath.Remove(ScriptFolderPath).Replace('\\', '>').Replace('/', '>').Remove(".nani")}";
-                var sheet = document.GetOrAddSheet(sheetName);
-
-                document.SetCellValue(sheet, "A", 1, "Line");
-                document.SetCellValue(sheet, "B", 1, "Text");
-                
+                var sheet = document.GetSheet(sheetName) ?? document.AddSheet(sheetName);
+                var composites = new List<Composite>();
                 for (int lineIdx = 0; lineIdx < textLines.Length; lineIdx++)
                 {
                     var textLine = textLines[lineIdx];
                     var line = script.Lines[lineIdx];
                     var rowIndex = (uint)lineIdx + 2;
-                    document.SetCellValue(sheet, "A", rowIndex, textLine);
-                    //Debug.Log(document.GetCellValue(sheet, "A", rowIndex));
-
                     var composite = new Composite(line, textLine);
-                    Debug.Log($"{composite.Template} -----> {string.Join(",", composite.Args)}");
+                    composites.Add(composite);
                 }
                 
+                var compositeSheet = new CompositeSheet(composites);
+                for (int i = 0; i < compositeSheet.Columns.Count; i++)
+                {
+                    var column = compositeSheet.Columns[i];
+                    var rowNumber = (uint)1;
+                    var columnName = OpenXML.GetColumnNameFromNumber(i + 1);
+                    sheet.ClearAllCellsInColumn(columnName);
+                    document.SetCellValue(sheet, columnName, rowNumber, column.Header);
+                    foreach (var value in column.Values)
+                    {
+                        rowNumber++;
+                        document.SetCellValue(sheet, columnName, rowNumber, value);
+                    }
+                }
+
                 sheet.Save();
             }
             

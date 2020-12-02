@@ -1,16 +1,19 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 
 namespace Naninovel.Spreadsheet
 {
     public class SheetColumn
     {
-        public readonly string Id;
-        public readonly IReadOnlyCollection<string> Values;
+        public readonly string Header;
+        public readonly IReadOnlyList<string> Values;
 
-        public SheetColumn (string id, IReadOnlyCollection<string> values)
+        private static readonly string[] emptyValues = new string[0];
+
+        public SheetColumn (string header, IEnumerable<string> values)
         {
-            Id = id;
-            Values = values;
+            Header = header;
+            Values = values?.ToArray() ?? emptyValues;
         }
     }
 }
