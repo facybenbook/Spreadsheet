@@ -120,7 +120,7 @@ namespace Naninovel.Spreadsheet
                     var textLine = textLines[lineIdx];
                     var line = script.Lines[lineIdx];
                     var rowIndex = (uint)lineIdx + 2;
-                    var composite = new Composite(line, textLine);
+                    var composite = new Composite(line);
                     composites.Add(composite);
                 }
                 

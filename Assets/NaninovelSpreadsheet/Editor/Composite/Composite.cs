@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text;
-using System.Text.RegularExpressions;
 using Naninovel.Commands;
 
 namespace Naninovel.Spreadsheet
@@ -23,13 +22,13 @@ namespace Naninovel.Spreadsheet
         {
             Template = template;
             Arguments = args?.ToArray() ?? emptyArgs;
-            Value = Arguments.Count > 0 ? string.Format(template, Arguments) : template;
+            Value = BuildTemplate(Template, Arguments);
         }
         
-        public Composite (ScriptLine scriptLine, string scriptLineText)
+        public Composite (ScriptLine scriptLine)
         {
-            Value = scriptLineText;
-            (Template, Arguments) = ParseScriptLine(scriptLine, scriptLineText);
+            (Template, Arguments) = ParseScriptLine(scriptLine);
+            Value = BuildTemplate(Template, Arguments);
         }
         
         public Composite (string managedTextLine)
@@ -37,81 +36,106 @@ namespace Naninovel.Spreadsheet
             Value = managedTextLine;
             (Template, Arguments) = ParseManagedText(managedTextLine);
         }
-
+        
         private static string BuildPlaceholder (int index) => $"{{{index}}}";
-
-        private static (string template, IReadOnlyList<string> args) ParseScriptLine (ScriptLine line, string lineText)
+        
+        private static string BuildTemplate (string template, IReadOnlyList<string> args)
         {
-            if (line is CommandScriptLine commandLine && commandLine.Command is Command.ILocalizable) 
-                return ParseCommand(commandLine.Command);
-            if (line is GenericTextScriptLine) 
-                return ParseGenericLine(lineText);
-            return (lineText, emptyArgs);
+            return args.Count > 0 ? string.Format(template, args.Cast<object>().ToArray()) : template;
+        }
+
+        private static (string template, IReadOnlyList<string> args) ParseScriptLine (ScriptLine line)
+        {
+            if (line is CommandScriptLine commandLine) 
+                return ParseCommandLine(commandLine);
+            if (line is GenericTextScriptLine genericLine) 
+                return ParseGenericLine(genericLine);
+            if (line is CommentScriptLine commentLine)
+                return (string.IsNullOrEmpty(commentLine.CommentText) ? string.Empty : $"{CommentScriptLine.IdentifierLiteral} {commentLine.CommentText}", emptyArgs);
+            if (line is LabelScriptLine labelLine)
+                return ($"{LabelScriptLine.IdentifierLiteral} {labelLine.LabelText}", emptyArgs);
+            throw new Exception($"Unknown command line type: {line.GetType().Name}");
         }
         
-        private static (string template, IReadOnlyList<string> args) ParseCommand (Command command)
+        private static (string template, IReadOnlyList<string> args) ParseCommandLine (CommandScriptLine commandLine)
+        {
+            var (commandTemplate, args) = ParseCommand(commandLine.Command);
+            return (CommandScriptLine.IdentifierLiteral + commandTemplate, args);
+        }
+
+        private static (string template, IReadOnlyList<string> args) ParseCommand (Command command, int argOffset = 0)
         {
             var args = new List<string>();
             var commandName = command.GetType().GetCustomAttribute<Command.CommandAliasAttribute>()?.Alias ?? command.GetType().Name.FirstToLower();
-            var templateBuilder = new StringBuilder($"{CommandScriptLine.IdentifierLiteral}{commandName} ");
+            var templateBuilder = new StringBuilder(commandName);
             var parameterFields = command.GetType().GetFields()
                 .Where(f => typeof(ICommandParameter).IsAssignableFrom(f.FieldType));
             foreach (var field in parameterFields)
             {
                 var parameter = field.GetValue(command) as ICommandParameter;
-                if (parameter is null || !parameter.HasValue) continue;
-                
+                if (parameter is null || !Command.Assigned(parameter)) continue;
+
                 var name = field.GetCustomAttribute<Command.ParameterAliasAttribute>()?.Alias ?? field.Name.FirstToLower();
+                var value = Command.EscapeParameterValue(parameter.ToString());
+
+                // Skip default (auto-initialized) values.
+                if (field.Name == nameof(Command.Wait) && value.EqualsFast("true")) continue;
+                if (command is AppendLineBreak && field.Name == nameof(AppendLineBreak.Count) && value.EqualsFast("1")) continue;
+                
+                templateBuilder.Append(" ");
+                
                 if (name != Command.NamelessParameterAlias)
                     templateBuilder.Append(name).Append(Command.ParameterAssignLiteral);
-
-                var value = Command.EscapeParameterValue(parameter.ToString());
+                
                 if (Attribute.IsDefined(field, typeof(Command.LocalizableParameterAttribute)))
                 {
                     args.Add(value);
-                    templateBuilder.Append(BuildPlaceholder(args.Count - 1)).Append(" ");
+                    templateBuilder.Append(BuildPlaceholder(args.Count - 1 + argOffset));
                 }
-                else templateBuilder.Append(value).Append(" ");
+                else templateBuilder.Append(value);
             }
             
             return (templateBuilder.ToString(), args);
         }
         
-        private static (string template, IReadOnlyList<string> args) ParseGenericLine (string line)
+        private static (string template, IReadOnlyList<string> args) ParseGenericLine (GenericTextScriptLine line)
         {
             var args = new List<string>();
             var templateBuilder = new StringBuilder();
-            var lineBody = GenericTextScriptLine.ExtractAuthor(line, out _, out _);
-            if (lineBody.Length < line.Length)
-                templateBuilder.Append(line.Substring(0, line.Length - lineBody.Length));
             
-            var inlinedMatches = GenericTextScriptLine.InlinedCommandRegex.Matches(lineBody).Cast<Match>();
-            var prevMatchEndIndex = -1;
-            foreach (var match in inlinedMatches)
+            var authorId = line.InlinedCommands.OfType<PrintText>()
+                .FirstOrDefault(p => Command.Assigned(p.AuthorId) && !p.AuthorId.DynamicValue)?.AuthorId.Value;
+            if (!string.IsNullOrEmpty(authorId))
             {
-                var argIndex = prevMatchEndIndex + 1;
-                var argLength = match.Index - argIndex;
-                if (argLength > 0)
-                    AppendBodyArg(argIndex, argLength);
-                
-                templateBuilder.Append(match.Value);
-                prevMatchEndIndex = match.GetEndIndex();
+                templateBuilder.Append(authorId);
+                var appearance = line.InlinedCommands.First() is ModifyCharacter mc
+                                 && Command.Assigned(mc.IdAndAppearance) && !mc.IdAndAppearance.DynamicValue 
+                                 && mc.IdAndAppearance.NamedValue.HasValue ? mc.IdAndAppearance.NamedValue : null;
+                if (!string.IsNullOrEmpty(appearance))
+                    templateBuilder.Append(GenericTextScriptLine.AuthorAppearanceLiteral).Append(appearance);
+                templateBuilder.Append(GenericTextScriptLine.AuthorIdLiteral);
             }
 
-            var lastArgIndex = prevMatchEndIndex + 1;
-            var lastArgLength = lineBody.Length - lastArgIndex;
-            if (lastArgLength > 0)
-                AppendBodyArg(lastArgIndex, lastArgLength);
+            for (int i = 0; i < line.InlinedCommands.Count; i++)
+            {
+                var command = line.InlinedCommands[i];
+                if (i == 0 && command is ModifyCharacter) continue;
+                
+                if (command is PrintText print)
+                {
+                    args.Add(print.Text.ToString());
+                    templateBuilder.Append(BuildPlaceholder(args.Count - 1));
+                    if (print.WaitForInput && i < line.InlinedCommands.Count - 1)
+                        templateBuilder.Append("[i]");
+                    continue;
+                }
+                
+                var (commandTemplate, commandArgs) = ParseCommand(command, args.Count);
+                args.AddRange(commandArgs);
+                templateBuilder.Append($"[{commandTemplate}]");
+            }
             
             return (templateBuilder.ToString(), args);
-
-            void AppendBodyArg (int bodyIndex, int argLength)
-            {
-                var arg = lineBody.Substring(bodyIndex, argLength);
-                args.Add(arg);
-                var placeholder = BuildPlaceholder(args.Count - 1);
-                templateBuilder.Append(placeholder);
-            }
         }
         
         private static (string template, IReadOnlyList<string> args) ParseManagedText (string line)
