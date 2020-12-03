@@ -31,11 +31,11 @@ namespace Naninovel.Spreadsheet
         
         private static string GetPrefName ([CallerMemberName] string name = "") => $"Naninovel.{nameof(SpreadsheetWindow)}.{name}";
 
-        private void ValidatePaths ()
+        private void OnEnable ()
         {
-            pathsValid = File.Exists(SpreadsheetPath) && Path.GetExtension(SpreadsheetPath) == ".xls" || Path.GetExtension(SpreadsheetPath) == ".xlsx";
+            ValidatePaths();
         }
-        
+
         private void OnGUI ()
         {
             EditorGUILayout.LabelField("Naninovel Spreadsheet", EditorStyles.boldLabel);
@@ -84,6 +84,11 @@ namespace Naninovel.Spreadsheet
             else EditorGUILayout.HelpBox("Spreadsheet path is not valid; make sure it points to an existing .xls or .xlsx file.", MessageType.Error);
 
             EditorGUILayout.Space();
+        }
+        
+        private void ValidatePaths ()
+        {
+            pathsValid = File.Exists(SpreadsheetPath) && Path.GetExtension(SpreadsheetPath) == ".xls" || Path.GetExtension(SpreadsheetPath) == ".xlsx";
         }
 
         private void Export ()

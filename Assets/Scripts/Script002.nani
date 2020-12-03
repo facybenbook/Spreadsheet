@@ -1,3 +1,5 @@
+# Start
 @resetText 
 Test.
-@stop
+
+@goto .Start

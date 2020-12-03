@@ -166,11 +166,14 @@ namespace Naninovel.Spreadsheet
             var itemIndex = 0;
             foreach (var item in sharedStringPart.SharedStringTable.Elements<SharedStringItem>())
             {
-                if (item.InnerText == value) return itemIndex;
+                if (item.InnerText == value) 
+                    return itemIndex;
                 itemIndex++;
             }
 
-            sharedStringPart.SharedStringTable.AppendChild(new SharedStringItem(new Text(value)));
+            var textValue = new Text(value);
+            var sharedItem = new SharedStringItem(textValue);
+            sharedStringPart.SharedStringTable.AppendChild(sharedItem);
             sharedStringPart.SharedStringTable.Save();
             return itemIndex;
         }

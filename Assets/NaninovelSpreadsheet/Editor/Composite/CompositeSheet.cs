@@ -5,6 +5,9 @@ namespace Naninovel.Spreadsheet
 {
     public class CompositeSheet
     {
+        public const string LinesHeader = "Script Lines";
+        public const string TextHeader = "Localizable Text";
+        
         public readonly IReadOnlyList<SheetColumn> Columns;
 
         public CompositeSheet (IEnumerable<Composite> composites)
@@ -16,9 +19,9 @@ namespace Naninovel.Spreadsheet
             foreach (var composite in composites)
             {
                 lineBuilder.AppendLine(composite.Template);
-                if (composite.Args.Count == 0) continue;
+                if (composite.Arguments.Count == 0) continue;
 
-                foreach (var arg in composite.Args)
+                foreach (var arg in composite.Arguments)
                 {
                     if (lineBuilder.Length > 0)
                     {
@@ -29,11 +32,13 @@ namespace Naninovel.Spreadsheet
                     textColumnValues.Add(arg);
                 }
             }
+            if (lineBuilder.Length > 0)
+                lineColumnValues.Add(lineBuilder.ToString());
             
             Columns = new []
             {
-                new SheetColumn("Line", lineColumnValues),
-                new SheetColumn("Text", textColumnValues)
+                new SheetColumn(LinesHeader, lineColumnValues),
+                new SheetColumn(TextHeader, textColumnValues)
             };
         }
     }

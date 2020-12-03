@@ -9,33 +9,33 @@ using Naninovel.Commands;
 namespace Naninovel.Spreadsheet
 {
     /// <summary>
-    /// Represent a string value associated with a template to build the value.
+    /// Represent a string template associated with arguments.
     /// </summary>
     public class Composite
     {
         public readonly string Value;
         public readonly string Template;
-        public readonly IReadOnlyList<string> Args;
+        public readonly IReadOnlyList<string> Arguments;
 
         private static readonly string[] emptyArgs = new string[0];
 
         public Composite (string template, IEnumerable<string> args)
         {
             Template = template;
-            Args = args?.ToArray() ?? emptyArgs;
-            Value = Args.Count > 0 ? string.Format(template, Args) : template;
+            Arguments = args?.ToArray() ?? emptyArgs;
+            Value = Arguments.Count > 0 ? string.Format(template, Arguments) : template;
         }
         
         public Composite (ScriptLine scriptLine, string scriptLineText)
         {
             Value = scriptLineText;
-            (Template, Args) = ParseScriptLine(scriptLine, scriptLineText);
+            (Template, Arguments) = ParseScriptLine(scriptLine, scriptLineText);
         }
         
         public Composite (string managedTextLine)
         {
             Value = managedTextLine;
-            (Template, Args) = ParseManagedText(managedTextLine);
+            (Template, Arguments) = ParseManagedText(managedTextLine);
         }
 
         private static string BuildPlaceholder (int index) => $"{{{index}}}";
@@ -43,24 +43,25 @@ namespace Naninovel.Spreadsheet
         private static (string template, IReadOnlyList<string> args) ParseScriptLine (ScriptLine line, string lineText)
         {
             if (line is CommandScriptLine commandLine && commandLine.Command is Command.ILocalizable) 
-                return ParseCommandLine(commandLine, lineText);
+                return ParseCommand(commandLine.Command);
             if (line is GenericTextScriptLine) 
                 return ParseGenericLine(lineText);
             return (lineText, emptyArgs);
         }
         
-        private static (string template, IReadOnlyList<string> args) ParseCommandLine (CommandScriptLine line, string lineText)
+        private static (string template, IReadOnlyList<string> args) ParseCommand (Command command)
         {
             var args = new List<string>();
-            var templateBuilder = new StringBuilder(lineText.GetBefore(" ")).Append(" ");
-            var parameterFields = line.Command.GetType().GetFields()
+            var commandName = command.GetType().GetCustomAttribute<Command.CommandAliasAttribute>()?.Alias ?? command.GetType().Name.FirstToLower();
+            var templateBuilder = new StringBuilder($"{CommandScriptLine.IdentifierLiteral}{commandName} ");
+            var parameterFields = command.GetType().GetFields()
                 .Where(f => typeof(ICommandParameter).IsAssignableFrom(f.FieldType));
             foreach (var field in parameterFields)
             {
-                var parameter = field.GetValue(line.Command) as ICommandParameter;
+                var parameter = field.GetValue(command) as ICommandParameter;
                 if (parameter is null || !parameter.HasValue) continue;
                 
-                var name = field.GetCustomAttribute<Command.CommandAliasAttribute>()?.Alias ?? field.Name.FirstToLower();
+                var name = field.GetCustomAttribute<Command.ParameterAliasAttribute>()?.Alias ?? field.Name.FirstToLower();
                 if (name != Command.NamelessParameterAlias)
                     templateBuilder.Append(name).Append(Command.ParameterAssignLiteral);
 
