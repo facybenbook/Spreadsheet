@@ -74,16 +74,13 @@ namespace Naninovel.Spreadsheet
             {
                 var parameter = field.GetValue(command) as ICommandParameter;
                 if (parameter is null || !Command.Assigned(parameter)) continue;
-
-                var name = field.GetCustomAttribute<Command.ParameterAliasAttribute>()?.Alias ?? field.Name.FirstToLower();
+                
                 var value = Command.EscapeParameterValue(parameter.ToString());
-
-                // Skip default (auto-initialized) values.
-                if (field.Name == nameof(Command.Wait) && value.EqualsFast("true")) continue;
-                if (command is AppendLineBreak && field.Name == nameof(AppendLineBreak.Count) && value.EqualsFast("1")) continue;
+                if (field.GetCustomAttribute<Command.ParameterDefaultValueAttribute>()?.Value == value) continue;
                 
                 templateBuilder.Append(" ");
                 
+                var name = field.GetCustomAttribute<Command.ParameterAliasAttribute>()?.Alias ?? field.Name.FirstToLower();
                 if (name != Command.NamelessParameterAlias)
                     templateBuilder.Append(name).Append(Command.ParameterAssignLiteral);
                 
