@@ -1,0 +1,29 @@
+; Localization script for `Script001`
+
+# a67ab5f6
+; Lorem ipsum dolor sit amet, { Random(0, 10) } consectetur adipiscing elit. Fusce ut mauris sem. Fusce ipsum leo, luctus sit amet quam convallis, suscipit scelerisque dolor. Maecenas sit amet pulvinar felis, sed aliquam est. Mauris tincidunt tincidunt sapien non dictum. In quis mauris nibh.[i] Quisque ipsum eros, lacinia at lobortis vitae, semper ut ante. Sed lobortis id sapien vitae auctor. Quisque consectetur aliquet vulputate. Mauris fringilla neque non bibendum aliquet. 
+取オキ氏給てのぱお名販り冬投夜ワ半, { Random(0, 10) }度えね連開えすむ脳防演ぜ投定携青稿ひーむか梯郵イどで者38内のろざり君二学ヱレ合中クミユオ属抽綱ざきに。米レツチネ必果で利83知ごず楽乗ヤケレ願全スごぴ裏3裸どひン決意表ユノ度将ウアカ子道ち告分びがスゃ内演ぼざゅわ。[i]答サマ下清ぽーた張街どなに枚展フ子索トク騰文サヤマ背用使シルヌウ藤集ロチヤ失背へ座洗ヤルチ型枠イエス稿69那卓捨縦まんらと。
+
+# 2991eba4
+; Praesent nec euismod ante. Sed sit amet pellentesque mauris. Sed viverra est nibh, vitae rhoncus lacus venenatis at. Mauris eget posuere urna, a dignissim nisl.
+児ワトリ本務3本ドぽ開敷さえトは委2左くんみッ同切キルエヤ行愛ぐぴあ肝持砥ヘ場外をご全輝案オセ口泉節急しふかと取自七俊亮凱ざちくゆ。
+
+# d3ae418e
+; Mauris sit[br][i] amet lorem[spawn ShakePrinter params:,1 wait:false] sit amet nulla malesuada pulvinar.[skipInput]
+作4振きせ治無づけ[br][i]次王サミ阪7企っげ真理ノユ恐3手[spawn ShakePrinter params:,1 wait:false]りあぐし計言りけゅく元職ねけり伝宿もゃ甲生わべ時女ワケエア能整ノク括率限で止盾粘綿闇ざッそど。[skipInput]
+
+# a9f9b1d9
+; k: Ut et quam a dui imperdiet eleifend vitae eget neque.[i] Vestibulum sollicitudin et tortor sed dignissim.[br 2] Aliquam sit amet urna sollicitudin, fringilla dui ac, imperdiet elit. 
+k: 済供際ナ社県わさ真囲イ須生備ミ京5準[i]ネユホ刺三進ょ浜共エサヘ要万ヨムスサ分岡じ言重著菱ラロ農生[br 2]よな触努ゆづげさ題残び。
+
+# 1ced4e64
+; @print "Donec ut libero rutrum, \"porta tortor\" ut, volutpat nulla." speed:0.5 default:false
+@print "側チ輸富ハ鉄青フ堂購ソホ権文\"ぞゅゆょ収港\"すなおで問9断まりつ詐経ざ一" speed:0.5 default:false
+
+# de2c2a3a
+; @choice "Test choice" pos:10,50
+@choice "速らな設" pos:10,50
+
+# fc0c5eab
+; y.Default: Donec ligula nulla, pulvinar a ex suscipit, gravida vulputate orci. Maecenas suscipit nisl vel nibh volutpat varius. Vestibulum turpis sapien, fermentum in tempor in, venenatis vel sapien. 
+y.Default: 話声コ真禁選またでば車地ょにべ学裏モヒヘ量併ろてう江供ユネスナ止人エケラナ下月京ど新84郷たリ秘最ヲラレ刊行ほひ風国つみしろ馬証ウテ皇馬るぶ。

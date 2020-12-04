@@ -158,3 +158,7 @@ MonoBehaviour:
     - Name: Script002
       PathPrefix: Scripts
       Guid: efc6b3a87826d23498028f69d474056f
+  - Id: Characters/e633b4cb-8f96-4d17-859d-6d1f8cb0f13c
+    Resources: []
+  - Id: Characters/4e996dfb-f128-4b73-aac7-90e0e1be1a92
+    Resources: []
