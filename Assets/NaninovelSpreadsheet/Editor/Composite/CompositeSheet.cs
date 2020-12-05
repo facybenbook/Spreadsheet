@@ -1,5 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Text;
+using DocumentFormat.OpenXml.Packaging;
+using DocumentFormat.OpenXml.Spreadsheet;
 
 namespace Naninovel.Spreadsheet
 {
@@ -10,14 +12,15 @@ namespace Naninovel.Spreadsheet
         
         public readonly IReadOnlyList<SheetColumn> Columns;
 
-        public CompositeSheet (IEnumerable<Composite> composites)
+        public CompositeSheet (Script script)
         {
             var lineColumnValues = new List<string>();
             var textColumnValues = new List<string>();
             
             var lineBuilder = new StringBuilder();
-            foreach (var composite in composites)
+            foreach (var line in script.Lines)
             {
+                var composite = new Composite(line);
                 lineBuilder.AppendLine(composite.Template);
                 if (composite.Arguments.Count == 0) continue;
 
@@ -40,6 +43,23 @@ namespace Naninovel.Spreadsheet
                 new SheetColumn(LinesHeader, lineColumnValues),
                 new SheetColumn(TextHeader, textColumnValues)
             };
+        }
+
+        public void WriteToSheet (SpreadsheetDocument document, Worksheet sheet)
+        {
+            for (int i = 0; i < Columns.Count; i++)
+            {
+                var column = Columns[i];
+                var rowNumber = (uint)1;
+                var columnName = OpenXML.GetColumnNameFromNumber(i + 1);
+                sheet.ClearAllCellsInColumn(columnName);
+                document.SetCellValue(sheet, columnName, rowNumber, column.Header);
+                foreach (var value in column.Values)
+                {
+                    rowNumber++;
+                    document.SetCellValue(sheet, columnName, rowNumber, value);
+                }
+            }
         }
     }
 }

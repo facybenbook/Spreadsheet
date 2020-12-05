@@ -1,7 +1,5 @@
-﻿using System.Collections.Generic;
-using System.IO;
+﻿using System.IO;
 using System.Runtime.CompilerServices;
-using System.Text;
 using DocumentFormat.OpenXml.Packaging;
 using UnityEditor;
 using UnityEngine;
@@ -108,37 +106,10 @@ namespace Naninovel.Spreadsheet
 
                 var assetPath = PathUtils.AbsoluteToAssetPath(scriptPath);
                 var script = AssetDatabase.LoadAssetAtPath<Script>(assetPath);
-                var scriptText = File.ReadAllText(scriptPath, Encoding.UTF8);
-                var textLines = Script.SplitScriptText(scriptText);
-                Debug.Assert(script.Lines.Count == textLines.Length);
-                
                 var sheetName = $"Scripts{scriptPath.Remove(ScriptFolderPath).Replace('\\', '>').Replace('/', '>').Remove(".nani")}";
                 var sheet = document.GetSheet(sheetName) ?? document.AddSheet(sheetName);
-                var composites = new List<Composite>();
-                for (int lineIdx = 0; lineIdx < textLines.Length; lineIdx++)
-                {
-                    var textLine = textLines[lineIdx];
-                    var line = script.Lines[lineIdx];
-                    var rowIndex = (uint)lineIdx + 2;
-                    var composite = new Composite(line);
-                    composites.Add(composite);
-                }
+                new CompositeSheet(script).WriteToSheet(document, sheet);
                 
-                var compositeSheet = new CompositeSheet(composites);
-                for (int i = 0; i < compositeSheet.Columns.Count; i++)
-                {
-                    var column = compositeSheet.Columns[i];
-                    var rowNumber = (uint)1;
-                    var columnName = OpenXML.GetColumnNameFromNumber(i + 1);
-                    sheet.ClearAllCellsInColumn(columnName);
-                    document.SetCellValue(sheet, columnName, rowNumber, column.Header);
-                    foreach (var value in column.Values)
-                    {
-                        rowNumber++;
-                        document.SetCellValue(sheet, columnName, rowNumber, value);
-                    }
-                }
-
                 sheet.Save();
             }
             
