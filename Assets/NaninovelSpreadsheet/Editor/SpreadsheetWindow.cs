@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System.Collections.Generic;
+using System.IO;
 using System.Runtime.CompilerServices;
 using DocumentFormat.OpenXml.Packaging;
 using UnityEditor;
@@ -108,7 +109,8 @@ namespace Naninovel.Spreadsheet
                 var script = AssetDatabase.LoadAssetAtPath<Script>(assetPath);
                 var sheetName = $"Scripts{scriptPath.Remove(ScriptFolderPath).Replace('\\', '>').Replace('/', '>').Remove(".nani")}";
                 var sheet = document.GetSheet(sheetName) ?? document.AddSheet(sheetName);
-                new CompositeSheet(script).WriteToSheet(document, sheet);
+                var localizationScripts = LoadLocalizationScriptsFor(script);
+                new CompositeSheet(script, localizationScripts).WriteToSheet(document, sheet);
                 
                 sheet.Save();
             }
@@ -123,6 +125,11 @@ namespace Naninovel.Spreadsheet
             if (!EditorUtility.DisplayDialog("Import data from the spreadsheet?",
                 "Are you sure you want to import the spreadsheet data to this project?\n\nAffected scenario scripts, managed text and localization documents will be overwritten, existing data could be lost. The effect of this action is permanent and can't be undone, so make sure to backup the project before confirming.\n\nIn case the spreadsheet is currently open in another program, close the program before proceeding.", "Import", "Cancel")) return;
             
+        }
+
+        private IReadOnlyCollection<Script> LoadLocalizationScriptsFor (Script script)
+        {
+            return new Script[0];
         }
     }
 }
