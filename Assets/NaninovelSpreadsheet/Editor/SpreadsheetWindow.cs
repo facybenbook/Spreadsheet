@@ -100,18 +100,48 @@ namespace Naninovel.Spreadsheet
             DisplayProgress(SpreadsheetPath, 0);
             
             var document = SpreadsheetDocument.Open(SpreadsheetPath, true);
-            var scriptPaths = Directory.GetFiles(ScriptFolderPath, "*.nani", SearchOption.AllDirectories);
-            for (int pathIdx = 0; pathIdx < scriptPaths.Length; pathIdx++)
+
+            if (Directory.Exists(ScriptFolderPath))
             {
-                var scriptPath = scriptPaths[pathIdx];
-                var scriptName = Path.GetFileNameWithoutExtension(scriptPath);
-                DisplayProgress(scriptName, pathIdx / (float)scriptPaths.Length);
-                ExportScript(scriptPath);
+                var scriptPaths = Directory.GetFiles(ScriptFolderPath, "*.nani", SearchOption.AllDirectories);
+                for (int pathIdx = 0; pathIdx < scriptPaths.Length; pathIdx++)
+                {
+                    var scriptPath = scriptPaths[pathIdx];
+                    var scriptName = Path.GetFileNameWithoutExtension(scriptPath);
+                    var progress = pathIdx / (float)scriptPaths.Length * .75f;
+                    DisplayProgress(scriptName, progress);
+                    ExportScript(scriptPath);
+                }
             }
-            
+
+            if (Directory.Exists(TextFolderPath))
+            {
+                var managedTextPaths = Directory.GetFiles(TextFolderPath, "*.txt", SearchOption.AllDirectories);
+                for (int pathIdx = 0; pathIdx < managedTextPaths.Length; pathIdx++)
+                {
+                    var docPath = managedTextPaths[pathIdx];
+                    var docName = Path.GetFileNameWithoutExtension(docPath);
+                    var progress = .75f + pathIdx / (float)managedTextPaths.Length * .25f;
+                    DisplayProgress(docName, progress);
+                    ExportManagedText(docPath);
+                }
+            }
+
             document.Dispose();
 
             void DisplayProgress (string file, float progress) => EditorUtility.DisplayProgressBar("Exporting To Spreadsheet", $"Processing `{file}`...", progress);
+            
+            void ExportManagedText (string docPath)
+            {
+                var docText = File.ReadAllText(docPath, Encoding.UTF8);
+                var localPath = docPath.Remove(TextFolderPath).TrimStart('\\').TrimStart('/');
+                var sheetName = $"Text>{localPath.Replace('\\', '>').Replace('/', '>').Remove(".txt")}";
+                var sheet = document.GetSheet(sheetName) ?? document.AddSheet(sheetName);
+                var localizations = LoadLocalizationsFor<string>(localPath, 
+                    ManagedTextConfiguration.DefaultManagedTextPathPrefix, p => File.ReadAllText(p, Encoding.UTF8));
+                new CompositeSheet(docText, localizations).WriteToSheet(document, sheet);
+                sheet.Save();
+            }
             
             void ExportScript (string scriptPath)
             {
@@ -119,28 +149,28 @@ namespace Naninovel.Spreadsheet
                 var localPath = scriptPath.Remove(ScriptFolderPath).TrimStart('\\').TrimStart('/');
                 var sheetName = $"Scripts>{localPath.Replace('\\', '>').Replace('/', '>').Remove(".nani")}";
                 var sheet = document.GetSheet(sheetName) ?? document.AddSheet(sheetName);
-                var localizationScripts = LoadLocalizationScriptsFor(localPath);
-                new CompositeSheet(script, localizationScripts).WriteToSheet(document, sheet);
+                var localizations = LoadLocalizationsFor<Script>(localPath, ScriptsConfiguration.DefaultScriptsPathPrefix, LoadScriptAtPath);
+                new CompositeSheet(script, localizations).WriteToSheet(document, sheet);
                 sheet.Save();
             }
             
-            IReadOnlyCollection<Script> LoadLocalizationScriptsFor (string scriptLocalPath)
+            IReadOnlyCollection<T> LoadLocalizationsFor<T> (string localPath, string pathPrefix, Func<string, T> loader)
             {
-                if (!Directory.Exists(LocalizationFolderPath)) return new Script[0];
+                if (!Directory.Exists(LocalizationFolderPath)) return new T[0];
 
-                var localizationScripts = new List<Script>();
+                var localizations = new List<T>();
                 foreach (var localeDir in Directory.EnumerateDirectories(LocalizationFolderPath))
                 {
-                    var localizationScriptPath = Path.Combine(localeDir, ScriptsConfiguration.DefaultScriptsPathPrefix, scriptLocalPath);
-                    if (!File.Exists(localizationScriptPath))
+                    var localizationPath = Path.Combine(localeDir, pathPrefix, localPath);
+                    if (!File.Exists(localizationPath))
                     {
-                        Debug.LogWarning($"Missing localization script for `{scriptLocalPath}` (expected in `{localizationScriptPath}`)."); 
+                        Debug.LogWarning($"Missing localization resource for `{localPath}` (expected in `{localizationPath}`)."); 
                         continue;
                     }
-                    var localizationScript = LoadScriptAtPath(localizationScriptPath);
-                    localizationScripts.Add(localizationScript);
+                    var localization = loader(localizationPath);
+                    localizations.Add(localization);
                 }
-                return localizationScripts;
+                return localizations;
             }
         }
 

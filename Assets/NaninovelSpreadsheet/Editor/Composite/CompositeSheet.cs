@@ -17,9 +17,14 @@ namespace Naninovel.Spreadsheet
         
         private static readonly Dictionary<Script, string> localesCache = new Dictionary<Script, string>();
         
-        public CompositeSheet (Script script, IReadOnlyCollection<Script> localizationScripts)
+        public CompositeSheet (Script script, IReadOnlyCollection<Script> localizations)
         {
-            Columns = ParseScript(script, localizationScripts);
+            Columns = ParseScript(script, localizations);
+        }
+        
+        public CompositeSheet (string managedText, IReadOnlyCollection<string> localizations)
+        {
+            Columns = ParseManagedText(managedText, localizations);
         }
 
         public void WriteToSheet (SpreadsheetDocument document, Worksheet sheet)
@@ -38,8 +43,44 @@ namespace Naninovel.Spreadsheet
                 }
             }
         }
+        
+        private static IReadOnlyList<SheetColumn> ParseManagedText (string managedText, IReadOnlyCollection<string> localizations)
+        {
+            var templateValues = new List<string>();
+            var argumentValues = new List<string>();
+            //var localizedValuesMap = new Dictionary<string, List<string>>();
+            var templateBuilder = new StringBuilder();
+            foreach (var line in managedText.SplitByNewLine())
+            {
+                var composite = new Composite(line);
+                ParseComposite(composite, templateBuilder, templateValues, argumentValues);
+                
+                // if (composite.Arguments.Count == 0) continue;
+                // foreach (var localization in localizations)
+                // {
+                //     var localizedValues = GetLocalizedValuesForLine(line, localization, composite.Arguments.Count);
+                //     AddLocalizedValues(localization, localizedValuesMap, localizedValues);
+                // }
+            }
+            if (templateBuilder.Length > 0)
+                templateValues.Add(templateBuilder.ToString());
+            
+            var columns = new List<SheetColumn>
+            {
+                new SheetColumn(TemplateHeader, templateValues),
+                new SheetColumn(ArgumentHeader, argumentValues)
+            };
+            
+            // foreach (var kv in localizedValuesMap)
+            // {
+            //     var localizedColumn = new SheetColumn(kv.Key, kv.Value);
+            //     columns.Add(localizedColumn);
+            // }
 
-        private static IReadOnlyList<SheetColumn> ParseScript (Script script, IReadOnlyCollection<Script> localizationScripts)
+            return columns;
+        }
+
+        private static IReadOnlyList<SheetColumn> ParseScript (Script script, IReadOnlyCollection<Script> localizations)
         {
             var templateValues = new List<string>();
             var argumentValues = new List<string>();
@@ -51,7 +92,7 @@ namespace Naninovel.Spreadsheet
                 ParseComposite(composite, templateBuilder, templateValues, argumentValues);
                 
                 if (composite.Arguments.Count == 0) continue;
-                foreach (var localizationScript in localizationScripts)
+                foreach (var localizationScript in localizations)
                 {
                     var localizedValues = GetLocalizedValuesForLine(line, localizationScript, composite.Arguments.Count);
                     AddLocalizedValues(localizationScript, localizedValuesMap, localizedValues);
