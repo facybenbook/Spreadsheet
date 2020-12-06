@@ -1,6 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Runtime.CompilerServices;
+using System.Text;
 using DocumentFormat.OpenXml.Packaging;
 using UnityEditor;
 using UnityEngine;
@@ -104,32 +106,47 @@ namespace Naninovel.Spreadsheet
                 var scriptPath = scriptPaths[pathIdx];
                 var scriptName = Path.GetFileNameWithoutExtension(scriptPath);
                 DisplayProgress(scriptName, pathIdx / (float)scriptPaths.Length);
-
-                var assetPath = PathUtils.AbsoluteToAssetPath(scriptPath);
-                var script = AssetDatabase.LoadAssetAtPath<Script>(assetPath);
-                var sheetName = $"Scripts{scriptPath.Remove(ScriptFolderPath).Replace('\\', '>').Replace('/', '>').Remove(".nani")}";
-                var sheet = document.GetSheet(sheetName) ?? document.AddSheet(sheetName);
-                var localizationScripts = LoadLocalizationScriptsFor(script);
-                new CompositeSheet(script, localizationScripts).WriteToSheet(document, sheet);
-                
-                sheet.Save();
+                ExportScript(scriptPath);
             }
             
             document.Dispose();
 
             void DisplayProgress (string file, float progress) => EditorUtility.DisplayProgressBar("Exporting To Spreadsheet", $"Processing `{file}`...", progress);
+            
+            void ExportScript (string scriptPath)
+            {
+                var script = LoadScriptAtPath(scriptPath);
+                var sheetName = $"Scripts{scriptPath.Remove(ScriptFolderPath).Replace('\\', '>').Replace('/', '>').Remove(".nani")}";
+                var sheet = document.GetSheet(sheetName) ?? document.AddSheet(sheetName);
+                var localizationScripts = LoadLocalizationScriptsFor(script);
+                new CompositeSheet(script, localizationScripts).WriteToSheet(document, sheet);
+                sheet.Save();
+            }
+            
+            IReadOnlyCollection<Script> LoadLocalizationScriptsFor (Script script)
+            {
+                return new Script[0];
+            }
         }
-        
+
+        private static Script LoadScriptAtPath (string scriptPath)
+        {
+            var assetPath = PathUtils.AbsoluteToAssetPath(scriptPath);
+            var script = AssetDatabase.LoadAssetAtPath<Script>(assetPath);
+            if (script == null)
+            {
+                var scriptText = File.ReadAllText(scriptPath, Encoding.UTF8);
+                script = Script.FromScriptText(scriptPath, scriptText);
+            }
+            if (script == null) throw new Exception($"Failed to load `{scriptPath}` script.");
+            return script;
+        }
+
         private void Import ()
         {
             if (!EditorUtility.DisplayDialog("Import data from the spreadsheet?",
                 "Are you sure you want to import the spreadsheet data to this project?\n\nAffected scenario scripts, managed text and localization documents will be overwritten, existing data could be lost. The effect of this action is permanent and can't be undone, so make sure to backup the project before confirming.\n\nIn case the spreadsheet is currently open in another program, close the program before proceeding.", "Import", "Cancel")) return;
             
-        }
-
-        private IReadOnlyCollection<Script> LoadLocalizationScriptsFor (Script script)
-        {
-            return new Script[0];
         }
     }
 }
