@@ -50,6 +50,7 @@ namespace Naninovel.Spreadsheet
                 var composite = new Composite(line);
                 ParseComposite(composite, templateBuilder, templateValues, argumentValues);
                 
+                if (composite.Arguments.Count == 0) continue;
                 foreach (var localizationScript in localizationScripts)
                 {
                     var localizedValues = GetLocalizedValuesForLine(line, localizationScript, composite.Arguments.Count);
@@ -124,7 +125,7 @@ namespace Naninovel.Spreadsheet
                 throw new Exception($"Failed to find `{locale}` localization for `{line.ScriptName}` script at line #{line.LineNumber}. Try re-generating localization documents.");
             var endIndex = localizationScript.FindLine<LabelScriptLine>(l => l.LineIndex > startIndex)?.LineIndex ?? localizationScript.Lines.Count;
             var localizationLines = localizationScript.Lines
-                .Where(l => (line is CommandScriptLine || line is GenericTextScriptLine genericLine && genericLine.InlinedCommands.Count > 0) && line.LineIndex > startIndex && line.LineIndex < endIndex).ToArray();
+                .Where(l => (l is CommandScriptLine || l is GenericTextScriptLine gl && gl.InlinedCommands.Count > 0) && l.LineIndex > startIndex && l.LineIndex < endIndex).ToArray();
             if (localizationLines.Length > 1)
                 Debug.LogWarning($"Multiple `{locale}` localization lines found for `{line.ScriptName}` script at line #{line.LineNumber}. Only the first one will be exported to the spreadsheet.");
             if (localizationLines.Length == 0)

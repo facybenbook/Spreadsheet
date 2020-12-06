@@ -116,16 +116,31 @@ namespace Naninovel.Spreadsheet
             void ExportScript (string scriptPath)
             {
                 var script = LoadScriptAtPath(scriptPath);
-                var sheetName = $"Scripts{scriptPath.Remove(ScriptFolderPath).Replace('\\', '>').Replace('/', '>').Remove(".nani")}";
+                var localPath = scriptPath.Remove(ScriptFolderPath).TrimStart('\\').TrimStart('/');
+                var sheetName = $"Scripts>{localPath.Replace('\\', '>').Replace('/', '>').Remove(".nani")}";
                 var sheet = document.GetSheet(sheetName) ?? document.AddSheet(sheetName);
-                var localizationScripts = LoadLocalizationScriptsFor(script);
+                var localizationScripts = LoadLocalizationScriptsFor(localPath);
                 new CompositeSheet(script, localizationScripts).WriteToSheet(document, sheet);
                 sheet.Save();
             }
             
-            IReadOnlyCollection<Script> LoadLocalizationScriptsFor (Script script)
+            IReadOnlyCollection<Script> LoadLocalizationScriptsFor (string scriptLocalPath)
             {
-                return new Script[0];
+                if (!Directory.Exists(LocalizationFolderPath)) return new Script[0];
+
+                var localizationScripts = new List<Script>();
+                foreach (var localeDir in Directory.EnumerateDirectories(LocalizationFolderPath))
+                {
+                    var localizationScriptPath = Path.Combine(localeDir, ScriptsConfiguration.DefaultScriptsPathPrefix, scriptLocalPath);
+                    if (!File.Exists(localizationScriptPath))
+                    {
+                        Debug.LogWarning($"Missing localization script for `{scriptLocalPath}` (expected in `{localizationScriptPath}`)."); 
+                        continue;
+                    }
+                    var localizationScript = LoadScriptAtPath(localizationScriptPath);
+                    localizationScripts.Add(localizationScript);
+                }
+                return localizationScripts;
             }
         }
 

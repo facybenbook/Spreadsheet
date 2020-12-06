@@ -1,5 +1,10 @@
 # Start
-@resetText 
-Test.
+
+Test input value.
+
+@input i summary:"Test summary" value:"Test value"
+@stop
+
+You've entered: `{i}`.
 
 @goto .Start

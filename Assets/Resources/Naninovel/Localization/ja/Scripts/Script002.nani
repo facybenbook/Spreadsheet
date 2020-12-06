@@ -1,5 +1,13 @@
 ; English <en> to Japanese <ja> localization document for `Script002` naninovel script
 
-# fd84f4a9
-; Test.
-殺ゅドなは受住ロヒオネ
+# 960c7b33
+; Test input value.
+座洗ヤルチ型枠まんらと。
+
+# a73cb3af
+; @input i summary:"Test summary" value:"Test value"
+@input i summary:"冬投夜ワ半" value:"ごず楽乗ヤケレ"
+
+# dc558eda
+; You've entered: `{i}`.
+まんらと`{i}`。

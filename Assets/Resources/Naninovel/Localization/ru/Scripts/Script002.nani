@@ -1,5 +1,13 @@
 ; English <en> to Русский <ru> localization document for `Script002` naninovel script
 
-# fd84f4a9
-; Test.
-Закон исключённого третьего абстрактен.
+# 960c7b33
+; Test input value.
+Тест инпута.
+
+# a73cb3af
+; @input i summary:"Test summary" value:"Test value"
+@input i summary:"Тестовое заглавие" value:"Тестовое значение"
+
+# dc558eda
+; You've entered: `{i}`.
+Вы ввели: `{i}`.
