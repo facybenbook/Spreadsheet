@@ -122,8 +122,8 @@ namespace Naninovel.Spreadsheet
         {
             foreach (var cell in worksheet.GetAllCellsInColumn(columnName))
             {
-                cell.CellValue = null;
-                cell.DataType = null;
+                if (cell?.CellValue != null)
+                    cell.CellValue.Text = string.Empty;
             }
         }
 
