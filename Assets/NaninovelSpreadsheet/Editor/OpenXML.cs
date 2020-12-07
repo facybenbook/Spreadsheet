@@ -40,7 +40,7 @@ namespace Naninovel.Spreadsheet
                 .Elements<Row>().FirstOrDefault(r => r.RowIndex == rowNumber)?
                 .Elements<Cell>().FirstOrDefault(c => c.CellReference.Value.EqualsFast(cellReference));
         }
-        
+
         public static Cell AddCell (this Worksheet worksheet, string columnName, uint rowNumber)
         {
             var sheetData = worksheet.GetFirstChild<SheetData>();
@@ -50,7 +50,10 @@ namespace Naninovel.Spreadsheet
             if (row is null)
             {
                 row = new Row { RowIndex = rowNumber };
-                sheetData.AppendChild(row);
+                var previousRow = FindRowBefore(worksheet, rowNumber);
+                if (previousRow != null)
+                    sheetData.InsertAfter(row, previousRow);
+                else sheetData.InsertAt(row, 0);
             }
 
             if (row.Elements<Cell>().Any(c => c.CellReference.Value == cellReference))
@@ -174,6 +177,18 @@ namespace Naninovel.Spreadsheet
             sharedStringPart.SharedStringTable.AppendChild(sharedItem);
             sharedStringPart.SharedStringTable.Save();
             return itemIndex;
+        }
+        
+        private static Row FindRowBefore (Worksheet worksheet, uint rowNumber)
+        {
+            var sheetData = worksheet.GetFirstChild<SheetData>();
+            var previousRow = default(Row);
+            foreach (var row in sheetData.Elements<Row>().OrderBy(r => r.RowIndex))
+            {
+                if (row.RowIndex >= rowNumber) break;
+                previousRow = row;
+            }
+            return previousRow;
         }
     }
 }
