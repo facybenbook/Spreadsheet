@@ -46,10 +46,8 @@ namespace Naninovel.Spreadsheet
             var sheetData = worksheet.GetFirstChild<SheetData>();
             var cellReference = columnName + rowNumber;
 
-            var row = default(Row);
-            if (sheetData.Elements<Row>().Count(r => r.RowIndex == rowNumber) != 0)
-                row = sheetData.Elements<Row>().First(r => r.RowIndex == rowNumber);
-            else
+            var row = sheetData.Elements<Row>().FirstOrDefault(r => r.RowIndex == rowNumber);
+            if (row is null)
             {
                 row = new Row { RowIndex = rowNumber };
                 sheetData.AppendChild(row);
