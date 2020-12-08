@@ -146,9 +146,8 @@ namespace Naninovel.Spreadsheet
         {
             if (!Directory.Exists(localeFolderPath)) return new string[0];
 
-            var prefix = localPath.EndsWithFast(scriptFileExtension)
-                ? ScriptsConfiguration.DefaultPathPrefix
-                : ManagedTextConfiguration.DefaultPathPrefix;
+            var prefix = localPath.EndsWithFast(scriptFileExtension) ? ScriptsConfiguration.DefaultPathPrefix
+                                                                     : ManagedTextConfiguration.DefaultPathPrefix;
             var paths = new List<string>();
             foreach (var localeDir in Directory.EnumerateDirectories(localeFolderPath))
             {
@@ -158,10 +157,8 @@ namespace Naninovel.Spreadsheet
                     Debug.LogWarning($"Missing localization resource for `{localPath}` (expected in `{localizationPath}`).");
                     continue;
                 }
-
                 paths.Add(localizationPath);
             }
-
             return paths;
         }
         
