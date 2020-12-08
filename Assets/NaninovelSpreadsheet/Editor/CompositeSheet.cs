@@ -54,43 +54,43 @@ namespace Naninovel.Spreadsheet
 
         public void WriteToScript (string path, IReadOnlyCollection<string> localizations)
         {
-            var builder = new StringBuilder();
-
-            var templateValues = GetColumnValues(templateHeader);
-            var argumentValues = GetColumnValues(argumentHeader);
-
-            var lastTemplate = default(string);
-            var lastArgs = new List<string>();
-            var maxLength = Mathf.Max(templateValues.Count, argumentValues.Count);
+            var builders = new Dictionary<string, StringBuilder>();
+            var lastTemplateIndex = -1;
+            var maxLength = columns.Values.Max(v => v.Count);
             for (int i = 0; i < maxLength; i++)
             {
-                var template = templateValues.ElementAtOrDefault(i) ?? string.Empty;
-                var argument = argumentValues.ElementAtOrDefault(i) ?? string.Empty;
-
-                if (string.IsNullOrWhiteSpace(template))
-                {
-                    lastArgs.Add(argument);
-                    continue;
-                }
-
-                if (lastTemplate != null)
-                    WriteLine();
-
-                lastTemplate = template;
-                lastArgs.Add(argument);
+                var template = GetColumnValues(templateHeader).ElementAtOrDefault(i);
+                if (string.IsNullOrWhiteSpace(template)) continue;
+                if (lastTemplateIndex > -1)
+                    WriteLine(i - 1);
+                lastTemplateIndex = i;
             }
+            WriteLine(maxLength - 1);
             
-            if (lastTemplate != null)
-                WriteLine();
-            
-            File.WriteAllText(path, builder.ToString(), Encoding.UTF8);
+            File.WriteAllText(path, GetBuilder(templateHeader).ToString(), Encoding.UTF8);
 
-            void WriteLine ()
+            void WriteLine (int lastArgIndex)
             {
-                var composite = new Composite(lastTemplate, lastArgs);
-                builder.Append(composite.Value);
-                lastTemplate = null;
-                lastArgs.Clear();
+                var template = GetColumnValues(templateHeader)[lastTemplateIndex];
+                foreach (var header in columns.Keys)
+                {
+                    if (header == argumentHeader) continue;
+                    var values = GetColumnValues(argumentHeader);
+                    var length = Mathf.Min(values.Count - 1, lastArgIndex) - lastTemplateIndex + 1;
+                    var args = GetColumnValues(argumentHeader).GetRange(lastTemplateIndex, length);
+                    var composite = new Composite(template, args);
+                    GetBuilder(header).Append(composite.Value);
+                }
+            }
+
+            StringBuilder GetBuilder (string header)
+            {
+                if (!builders.TryGetValue(header, out var builder))
+                {
+                    builder = new StringBuilder();
+                    builders[header] = builder;
+                }
+                return builder;
             }
         }
         
