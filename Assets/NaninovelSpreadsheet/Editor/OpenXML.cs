@@ -97,16 +97,13 @@ namespace Naninovel.Spreadsheet
         {
             if (cell.DataType is null || cell.InnerText.Length == 0) return null;
 
-            switch (cell.DataType.Value)
+            if (cell.DataType.Value == CellValues.SharedString)
             {
-                case CellValues.String:
-                    return cell.CellValue.Text;
-                case CellValues.SharedString:
-                    var stringTable = document.WorkbookPart.GetPartsOfType<SharedStringTablePart>().FirstOrDefault();
-                    return stringTable?.SharedStringTable.ElementAt(int.Parse(cell.InnerText)).InnerText;
-                default:
-                    return cell.InnerText;
+                var stringTable = document.WorkbookPart.GetPartsOfType<SharedStringTablePart>().FirstOrDefault();
+                return stringTable?.SharedStringTable.ElementAt(int.Parse(cell.InnerText)).InnerText;
             }
+            
+            return cell.InnerText;
         }
 
         public static string GetCellValue (this SpreadsheetDocument document, Worksheet worksheet, string columnName, uint rowNumber)
