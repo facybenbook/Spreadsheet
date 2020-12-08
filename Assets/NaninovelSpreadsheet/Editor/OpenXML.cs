@@ -104,8 +104,6 @@ namespace Naninovel.Spreadsheet
                 case CellValues.SharedString:
                     var stringTable = document.WorkbookPart.GetPartsOfType<SharedStringTablePart>().FirstOrDefault();
                     return stringTable?.SharedStringTable.ElementAt(int.Parse(cell.InnerText)).InnerText;
-                case CellValues.Boolean:
-                    return cell.InnerText.EqualsFast("0") ? "FALSE" : "TRUE";
                 default:
                     return cell.InnerText;
             }
