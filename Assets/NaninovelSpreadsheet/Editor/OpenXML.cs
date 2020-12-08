@@ -11,6 +11,25 @@ namespace Naninovel.Spreadsheet
     
     internal static class OpenXML
     {
+        public static IEnumerable<Worksheet> GetAllSheets (this SpreadsheetDocument document)
+        {
+            var workbookPart = document.WorkbookPart;
+            return workbookPart.Workbook.Descendants<Sheet>()
+                .Select(s => ((WorksheetPart)workbookPart.GetPartById(s.Id)).Worksheet);
+        }
+        
+        public static IEnumerable<string> GetSheetNames (this SpreadsheetDocument document)
+        {
+            return document.WorkbookPart.Workbook.Descendants<Sheet>().Select(s => s.Name.Value);
+        }
+
+        public static string GetSheetName (this Worksheet sheet, SpreadsheetDocument document)
+        {
+            var relationshipId = document.WorkbookPart.GetIdOfPart(sheet.WorksheetPart);
+            return document.WorkbookPart.Workbook.Sheets.Elements<Sheet>()
+                .FirstOrDefault(s => s.Id.HasValue && s.Id.Value == relationshipId)?.Name;
+        }
+        
         public static Worksheet GetSheet (this SpreadsheetDocument document, string sheetName)
         {
             var workbookPart = document.WorkbookPart;

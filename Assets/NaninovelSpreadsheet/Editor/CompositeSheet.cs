@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using DocumentFormat.OpenXml.Packaging;
@@ -13,10 +14,9 @@ namespace Naninovel.Spreadsheet
         private const string templateHeader = "Template";
         private const string argumentHeader = "Arguments";
         
-        private readonly Dictionary<string, List<string>> columnValues = new Dictionary<string, List<string>>();
+        private readonly Dictionary<string, List<string>> columns = new Dictionary<string, List<string>>();
         private readonly Dictionary<int, string> localeTagsCache = new Dictionary<int, string>();
-        private readonly StringBuilder templateBuilder = new StringBuilder();
-        
+
         public CompositeSheet (Script script, IReadOnlyCollection<Script> localizations)
         {
             FillColumnsFromScript(script, localizations);
@@ -27,11 +27,16 @@ namespace Naninovel.Spreadsheet
             FillColumnsFromManagedText(managedText, localizations);
         }
         
+        public CompositeSheet (SpreadsheetDocument document, Worksheet sheet)
+        {
+            FillColumnsFromSpreadsheet(document, sheet);
+        }
+
         public void WriteToSpreadsheet (SpreadsheetDocument document, Worksheet sheet)
         {
-            for (int i = 0; i < columnValues.Count; i++)
+            for (int i = 0; i < columns.Count; i++)
             {
-                var kv = columnValues.ElementAt(i);
+                var kv = columns.ElementAt(i);
                 var header = kv.Key;
                 var values = kv.Value;
                 var rowNumber = (uint)1;
@@ -47,12 +52,61 @@ namespace Naninovel.Spreadsheet
             sheet.Save();
         }
 
+        public void WriteToScript (string path, IReadOnlyCollection<string> localizations)
+        {
+            var builder = new StringBuilder();
+
+            var templateValues = GetColumnValues(templateHeader);
+            var argumentValues = GetColumnValues(argumentHeader);
+
+            var lastTemplate = default(string);
+            var lastArgs = new List<string>();
+            var maxLength = Mathf.Max(templateValues.Count, argumentValues.Count);
+            for (int i = 0; i < maxLength; i++)
+            {
+                var template = templateValues.ElementAtOrDefault(i) ?? string.Empty;
+                var argument = argumentValues.ElementAtOrDefault(i) ?? string.Empty;
+
+                if (string.IsNullOrWhiteSpace(template))
+                {
+                    lastArgs.Add(argument);
+                    continue;
+                }
+
+                if (lastTemplate != null)
+                    WriteLine();
+
+                lastTemplate = template;
+                lastArgs.Add(argument);
+            }
+            
+            if (lastTemplate != null)
+                WriteLine();
+            
+            File.WriteAllText(path, builder.ToString(), Encoding.UTF8);
+
+            void WriteLine ()
+            {
+                var composite = new Composite(lastTemplate, lastArgs);
+                builder.Append(composite.Value);
+                lastTemplate = null;
+                lastArgs.Clear();
+            }
+        }
+        
+        public void WriteToManagedText (string path, IReadOnlyCollection<string> localizations)
+        {
+            
+        }
+
         private void FillColumnsFromScript (Script script, IReadOnlyCollection<Script> localizations)
         {
+            var templateBuilder = new StringBuilder();
+            
             foreach (var line in script.Lines)
             {
                 var composite = new Composite(line);
-                FillColumnsFromComposite(composite);
+                FillColumnsFromComposite(composite, templateBuilder);
                 
                 if (composite.Arguments.Count == 0) continue;
                 foreach (var localizationScript in localizations)
@@ -94,6 +148,7 @@ namespace Naninovel.Spreadsheet
 
         private void FillColumnsFromManagedText (string managedText, IReadOnlyCollection<string> localizations)
         {
+            var templateBuilder = new StringBuilder();
             var localizationLines = localizations.Select(l => l.SplitByNewLine()).ToArray();
 
             foreach (var line in managedText.SplitByNewLine())
@@ -102,7 +157,7 @@ namespace Naninovel.Spreadsheet
                     line.StartsWithFast(ManagedTextUtils.RecordCommentLiteral)) continue;
 
                 var composite = new Composite(line);
-                FillColumnsFromComposite(composite);
+                FillColumnsFromComposite(composite, templateBuilder);
 
                 if (composite.Arguments.Count == 0) continue;
                 foreach (var localization in localizationLines)
@@ -135,7 +190,28 @@ namespace Naninovel.Spreadsheet
             }
         }
 
-        private void FillColumnsFromComposite (Composite composite)
+        public void FillColumnsFromSpreadsheet (SpreadsheetDocument document, Worksheet sheet)
+        {
+            for (int columnNumber = 1;; columnNumber++)
+            {
+                var columnName = OpenXML.GetColumnNameFromNumber(columnNumber);
+                var cells = sheet.GetAllCellsInColumn(columnName)
+                    .OrderBy(c => c.Ancestors<Row>().FirstOrDefault()?.RowIndex ?? uint.MaxValue).ToArray();
+                if (cells.Length == 0) break;
+
+                var header = cells[0].GetValue(document);
+                if (columnNumber > 2 && !LanguageTags.ContainsTag(header)) break;
+
+                for (int rowIndex = 1; rowIndex < cells.Length; rowIndex++)
+                {
+                    var cell = cells[rowIndex];
+                    var cellValue = cell.GetValue(document);
+                    GetColumnValues(header).Add(cellValue);
+                }
+            }
+        }
+
+        private void FillColumnsFromComposite (Composite composite, StringBuilder templateBuilder)
         {
             templateBuilder.AppendLine(composite.Template);
             if (composite.Arguments.Count == 0) return;
@@ -167,10 +243,10 @@ namespace Naninovel.Spreadsheet
         
         private List<string> GetColumnValues (string header)
         {
-            if (!columnValues.TryGetValue(header, out var values))
+            if (!columns.TryGetValue(header, out var values))
             {
                 values = new List<string>();
-                columnValues[header] = values;
+                columns[header] = values;
             }
             return values;
         }

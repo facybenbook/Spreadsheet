@@ -18,6 +18,13 @@ namespace Naninovel.Spreadsheet
 
         private static readonly string[] emptyArgs = new string[0];
 
+        public Composite (string template, IEnumerable<string> args)
+        {
+            Template = template;
+            Arguments = args?.ToArray() ?? emptyArgs;
+            Value = BuildTemplate(Template, Arguments);
+        }
+        
         public Composite (ScriptLine scriptLine)
         {
             (Template, Arguments) = ParseScriptLine(scriptLine);

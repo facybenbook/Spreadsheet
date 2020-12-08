@@ -22,6 +22,11 @@ namespace Naninovel.Spreadsheet
         private static readonly GUIContent textFolderPathContent = new GUIContent("Managed Text", "Folder containing managed text files (optional).");
         private static readonly GUIContent localizationFolderPathContent = new GUIContent("Localization", "Folder containing localization resources (optional).");
 
+        private const string scriptSheetNamePrefix = "Scripts>";
+        private const string managedTextSheetNamePrefix = "Text>";
+        private const string scriptFileExtension = ".nani";
+        private const string managedTextFileExtension = ".txt";
+        
         private bool pathsValid = false;
         
         [MenuItem("Naninovel/Tools/Spreadsheet")]
@@ -107,21 +112,46 @@ namespace Naninovel.Spreadsheet
             }
             finally { EditorUtility.ClearProgressBar(); }
         }
-
+        
+        private void Import ()
+        {
+            if (!EditorUtility.DisplayDialog("Import data from the spreadsheet?",
+                "Are you sure you want to import the spreadsheet data to this project?\n\nAffected scenario scripts, managed text and localization documents will be overwritten, existing data could be lost. The effect of this action is permanent and can't be undone, so make sure to backup the project before confirming.\n\nIn case the spreadsheet is currently open in another program, close the program before proceeding.", "Import", "Cancel")) return;
+            
+            try
+            {
+                var document = SpreadsheetDocument.Open(SpreadsheetPath, false);
+                var sheetsNames = document.GetSheetNames();
+                foreach (var sheetName in sheetsNames)
+                {
+                    var sheet = document.GetSheet(sheetName);
+                    var localPath = SheetNameToLocalPath(sheetName);
+                    var fullPath = LocalToFullPath(localPath);
+                    var localizations = LocateLocalizationsFor(localPath, false);
+                    var compositeSheet = new CompositeSheet(document, sheet);
+                    var fromScript = fullPath.EndsWithFast(scriptFileExtension);
+                    if (fromScript) compositeSheet.WriteToScript(fullPath, localizations);
+                    else compositeSheet.WriteToManagedText(fullPath, localizations);
+                }
+                document.Dispose();
+            }
+            finally { EditorUtility.ClearProgressBar(); }
+        }
+        
         private void ExportScriptsToSpreadsheet (SpreadsheetDocument document)
         {
             if (!Directory.Exists(ScriptFolderPath)) return;
             
-            var scriptPaths = Directory.GetFiles(ScriptFolderPath, "*.nani", SearchOption.AllDirectories);
+            var scriptPaths = Directory.GetFiles(ScriptFolderPath, $"*{scriptFileExtension}", SearchOption.AllDirectories);
             for (int pathIndex = 0; pathIndex < scriptPaths.Length; pathIndex++)
             {
                 DisplayProgress("Exporting Naninovel Scripts", scriptPaths, pathIndex);
                 var scriptPath = scriptPaths[pathIndex];
                 var script = LoadScriptAtPath(scriptPath);
-                var localPath = scriptPath.Remove(ScriptFolderPath).TrimStart('\\').TrimStart('/');
-                var sheetName = $"Scripts>{localPath.Replace('\\', '>').Replace('/', '>').Remove(".nani")}";
+                var localPath = FullToLocalPath(scriptPath);
+                var sheetName = LocalPathToSheetName(localPath);
                 var sheet = document.GetSheet(sheetName) ?? document.AddSheet(sheetName);
-                var localizations = LocateLocalizationsFor(localPath, ScriptsConfiguration.DefaultScriptsPathPrefix)
+                var localizations = LocateLocalizationsFor(localPath)
                     .Select(LoadScriptAtPath).ToArray();
                 new CompositeSheet(script, localizations).WriteToSpreadsheet(document, sheet);
             }
@@ -131,31 +161,44 @@ namespace Naninovel.Spreadsheet
         {
             if (!Directory.Exists(ManagedTextFolderPath)) return;
             
-            var managedTextPaths = Directory.GetFiles(ManagedTextFolderPath, "*.txt", SearchOption.AllDirectories);
+            var managedTextPaths = Directory.GetFiles(ManagedTextFolderPath, $"*{managedTextFileExtension}", SearchOption.AllDirectories);
             for (int pathIndex = 0; pathIndex < managedTextPaths.Length; pathIndex++)
             {
                 DisplayProgress("Exporting Managed Text", managedTextPaths, pathIndex);
                 var docPath = managedTextPaths[pathIndex];
                 var docText = File.ReadAllText(docPath, Encoding.UTF8);
-                var localPath = docPath.Remove(ManagedTextFolderPath).TrimStart('\\').TrimStart('/');
-                var sheetName = $"Text>{localPath.Replace('\\', '>').Replace('/', '>').Remove(".txt")}";
+                var localPath = FullToLocalPath(docPath);
+                var sheetName = LocalPathToSheetName(localPath);
                 var sheet = document.GetSheet(sheetName) ?? document.AddSheet(sheetName);
-                var localizations = LocateLocalizationsFor(localPath, ManagedTextConfiguration.DefaultManagedTextPathPrefix)
+                var localizations = LocateLocalizationsFor(localPath)
                     .Select(p => File.ReadAllText(p, Encoding.UTF8)).ToArray();
                 new CompositeSheet(docText, localizations).WriteToSpreadsheet(document, sheet);
             }
         }
 
-        private void Import ()
+        private string FullToLocalPath (string fullPath)
         {
-            if (!EditorUtility.DisplayDialog("Import data from the spreadsheet?",
-                "Are you sure you want to import the spreadsheet data to this project?\n\nAffected scenario scripts, managed text and localization documents will be overwritten, existing data could be lost. The effect of this action is permanent and can't be undone, so make sure to backup the project before confirming.\n\nIn case the spreadsheet is currently open in another program, close the program before proceeding.", "Import", "Cancel")) return;
-            
-            try
-            {
-
-            }
-            finally { EditorUtility.ClearProgressBar(); }
+            var prefix = fullPath.EndsWithFast(scriptFileExtension) ? ScriptFolderPath : ManagedTextFolderPath;
+            return fullPath.Remove(prefix).TrimStart('\\').TrimStart('/');
+        }
+        
+        private string LocalToFullPath (string localPath)
+        {
+            var prefix = localPath.EndsWithFast(scriptFileExtension) ? ScriptFolderPath : ManagedTextFolderPath;
+            return $"{prefix}/{localPath}"; 
+        }
+        
+        private static string LocalPathToSheetName (string localPath)
+        {
+            var namePrefix = localPath.EndsWithFast(scriptFileExtension) ? scriptSheetNamePrefix : managedTextSheetNamePrefix;
+            return namePrefix + localPath.Replace('\\', '>').Replace('/', '>').GetBeforeLast(".");
+        }
+        
+        private static string SheetNameToLocalPath (string sheetName)
+        {
+            var namePrefix = sheetName.StartsWithFast(scriptSheetNamePrefix) ? scriptSheetNamePrefix : managedTextSheetNamePrefix;
+            var fileExtension = namePrefix == scriptSheetNamePrefix ? scriptFileExtension : managedTextFileExtension;
+            return sheetName.GetAfterFirst(namePrefix).Replace('>', '/') + fileExtension;
         }
 
         private static void DisplayProgress (string title, IReadOnlyList<string> paths, int index)
@@ -179,15 +222,17 @@ namespace Naninovel.Spreadsheet
             return script;
         }
 
-        private IReadOnlyCollection<string> LocateLocalizationsFor (string localPath, string pathPrefix)
+        private IReadOnlyCollection<string> LocateLocalizationsFor (string localPath, bool skipMissing = true)
         {
             if (!Directory.Exists(LocalizationFolderPath)) return new string[0];
-            
+
+            var prefix = localPath.EndsWithFast(scriptFileExtension) ? ScriptsConfiguration.DefaultPathPrefix 
+                                                                     : ManagedTextConfiguration.DefaultPathPrefix;
             var paths = new List<string>();
             foreach (var localeDir in Directory.EnumerateDirectories(LocalizationFolderPath))
             {
-                var localizationPath = Path.Combine(localeDir, pathPrefix, localPath);
-                if (!File.Exists(localizationPath))
+                var localizationPath = Path.Combine(localeDir, prefix, localPath);
+                if (skipMissing && !File.Exists(localizationPath))
                 {
                     Debug.LogWarning($"Missing localization resource for `{localPath}` (expected in `{localizationPath}`)."); 
                     continue;
