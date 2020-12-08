@@ -7,10 +7,10 @@ namespace Naninovel.Spreadsheet
 {
     public class SpreadsheetWindow : EditorWindow
     {
-        protected string SpreadsheetPath { get => PlayerPrefs.GetString(GetPrefName()); set { PlayerPrefs.SetString(GetPrefName(), value); ValidatePaths(); } }
-        protected string ScriptFolderPath { get => PlayerPrefs.GetString(GetPrefName()); set => PlayerPrefs.SetString(GetPrefName(), value); }
-        protected string ManagedTextFolderPath { get => PlayerPrefs.GetString(GetPrefName()); set => PlayerPrefs.SetString(GetPrefName(), value); }
-        protected string LocalizationFolderPath { get => PlayerPrefs.GetString(GetPrefName()); set => PlayerPrefs.SetString(GetPrefName(), value); }
+        private string spreadsheetPath { get => PlayerPrefs.GetString(GetPrefName()); set { PlayerPrefs.SetString(GetPrefName(), value); ValidatePaths(); } }
+        private string scriptFolderPath { get => PlayerPrefs.GetString(GetPrefName()); set => PlayerPrefs.SetString(GetPrefName(), value); }
+        private string managedTextFolderPath { get => PlayerPrefs.GetString(GetPrefName()); set => PlayerPrefs.SetString(GetPrefName(), value); }
+        private string localizationFolderPath { get => PlayerPrefs.GetString(GetPrefName()); set => PlayerPrefs.SetString(GetPrefName(), value); }
 
         private static readonly GUIContent spreadsheetPathContent = new GUIContent("Spreadsheet", "The spreadsheet file (.xls or .xlsx).");
         private static readonly GUIContent scriptFolderPathContent = new GUIContent("Scripts", "Folder containing naninovel script files (optional).");
@@ -19,10 +19,10 @@ namespace Naninovel.Spreadsheet
 
         private SpreadsheetProcessor.Parameters Parameters => new SpreadsheetProcessor.Parameters
         {
-            SpreadsheetPath = SpreadsheetPath,
-            ScriptFolderPath = ScriptFolderPath,
-            ManagedTextFolderPath = ManagedTextFolderPath,
-            LocalizationFolderPath = LocalizationFolderPath
+            SpreadsheetPath = spreadsheetPath,
+            ScriptFolderPath = scriptFolderPath,
+            ManagedTextFolderPath = managedTextFolderPath,
+            LocalizationFolderPath = localizationFolderPath
         };
         
         private bool pathsValid = false;
@@ -50,30 +50,30 @@ namespace Naninovel.Spreadsheet
 
             using (new EditorGUILayout.HorizontalScope())
             {
-                SpreadsheetPath = EditorGUILayout.TextField(spreadsheetPathContent, SpreadsheetPath);
+                spreadsheetPath = EditorGUILayout.TextField(spreadsheetPathContent, spreadsheetPath);
                 if (GUILayout.Button("Select", EditorStyles.miniButton, GUILayout.Width(65)))
-                    SpreadsheetPath = EditorUtility.OpenFilePanel(spreadsheetPathContent.text, "", "xls,xlsx");
+                    spreadsheetPath = EditorUtility.OpenFilePanel(spreadsheetPathContent.text, "", "xls,xlsx");
             }
 
             using (new EditorGUILayout.HorizontalScope())
             {
-                ScriptFolderPath = EditorGUILayout.TextField(scriptFolderPathContent, ScriptFolderPath);
+                scriptFolderPath = EditorGUILayout.TextField(scriptFolderPathContent, scriptFolderPath);
                 if (GUILayout.Button("Select", EditorStyles.miniButton, GUILayout.Width(65)))
-                    ScriptFolderPath = EditorUtility.OpenFolderPanel(scriptFolderPathContent.text, "", "");
+                    scriptFolderPath = EditorUtility.OpenFolderPanel(scriptFolderPathContent.text, "", "");
             }
 
             using (new EditorGUILayout.HorizontalScope())
             {
-                ManagedTextFolderPath = EditorGUILayout.TextField(textFolderPathContent, ManagedTextFolderPath);
+                managedTextFolderPath = EditorGUILayout.TextField(textFolderPathContent, managedTextFolderPath);
                 if (GUILayout.Button("Select", EditorStyles.miniButton, GUILayout.Width(65)))
-                    ManagedTextFolderPath = EditorUtility.OpenFolderPanel(textFolderPathContent.text, "", "");
+                    managedTextFolderPath = EditorUtility.OpenFolderPanel(textFolderPathContent.text, "", "");
             }
 
             using (new EditorGUILayout.HorizontalScope())
             {
-                LocalizationFolderPath = EditorGUILayout.TextField(localizationFolderPathContent, LocalizationFolderPath);
+                localizationFolderPath = EditorGUILayout.TextField(localizationFolderPathContent, localizationFolderPath);
                 if (GUILayout.Button("Select", EditorStyles.miniButton, GUILayout.Width(65)))
-                    LocalizationFolderPath = EditorUtility.OpenFolderPanel(localizationFolderPathContent.text, "", "");
+                    localizationFolderPath = EditorUtility.OpenFolderPanel(localizationFolderPathContent.text, "", "");
             }
 
             GUILayout.FlexibleSpace();
@@ -93,7 +93,7 @@ namespace Naninovel.Spreadsheet
         
         private void ValidatePaths ()
         {
-            pathsValid = File.Exists(SpreadsheetPath) && Path.GetExtension(SpreadsheetPath) == ".xls" || Path.GetExtension(SpreadsheetPath) == ".xlsx";
+            pathsValid = File.Exists(spreadsheetPath) && Path.GetExtension(spreadsheetPath) == ".xls" || Path.GetExtension(spreadsheetPath) == ".xlsx";
         }
 
         private void Export ()
