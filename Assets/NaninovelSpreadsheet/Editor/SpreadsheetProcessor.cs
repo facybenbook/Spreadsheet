@@ -83,8 +83,7 @@ namespace Naninovel.Spreadsheet
                 var localPath = FullToLocalPath(scriptPath);
                 var sheetName = LocalPathToSheetName(localPath);
                 var sheet = document.GetSheet(sheetName) ?? document.AddSheet(sheetName);
-                var localizations = LocateLocalizationsFor(localPath)
-                    .Select(LoadScriptAtPath).ToArray();
+                var localizations = LocateLocalizationsFor(localPath).Select(LoadScriptAtPath).ToArray();
                 new CompositeSheet(script, localizations).WriteToSpreadsheet(document, sheet);
             }
         }
@@ -96,12 +95,11 @@ namespace Naninovel.Spreadsheet
             {
                 NotifyProgressChanged(managedTextPaths, pathIndex);
                 var docPath = managedTextPaths[pathIndex];
-                var docText = File.ReadAllText(docPath, Encoding.UTF8);
+                var docText = File.ReadAllText(docPath);
                 var localPath = FullToLocalPath(docPath);
                 var sheetName = LocalPathToSheetName(localPath);
                 var sheet = document.GetSheet(sheetName) ?? document.AddSheet(sheetName);
-                var localizations = LocateLocalizationsFor(localPath)
-                    .Select(p => File.ReadAllText(p, Encoding.UTF8)).ToArray();
+                var localizations = LocateLocalizationsFor(localPath).Select(File.ReadAllText).ToArray();
                 new CompositeSheet(docText, localizations).WriteToSpreadsheet(document, sheet);
             }
         }
@@ -137,7 +135,7 @@ namespace Naninovel.Spreadsheet
             var script = AssetDatabase.LoadAssetAtPath<Script>(assetPath);
             if (script == null)
             {
-                var scriptText = File.ReadAllText(scriptPath, Encoding.UTF8);
+                var scriptText = File.ReadAllText(scriptPath);
                 script = Script.FromScriptText(scriptPath, scriptText);
             }
 

@@ -67,7 +67,7 @@ namespace Naninovel.Spreadsheet
             }
             WriteLine(maxLength - 1);
             
-            File.WriteAllText(path, GetBuilder(templateHeader).ToString(), Encoding.UTF8);
+            File.WriteAllText(path, GetBuilder(templateHeader).ToString());
 
             void WriteLine (int lastArgIndex)
             {
