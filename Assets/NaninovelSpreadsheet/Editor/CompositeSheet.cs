@@ -116,10 +116,13 @@ namespace Naninovel.Spreadsheet
                     GetColumnValues(locale).AddRange(localizedValues);
                 }
             }
-            
+
             if (templateBuilder.Length > 0)
-                GetColumnValues(templateHeader).Add(templateBuilder.ToString());
-            
+            {
+                var lastTemplateValue = templateBuilder.ToString().TrimEnd();
+                GetColumnValues(templateHeader).Add(lastTemplateValue);
+            }
+
             string ExtractScriptLocaleTag (Script localizationScript)
             {
                 var firstCommentText = localizationScript.Lines.OfType<CommentScriptLine>().FirstOrDefault()?.CommentText;
@@ -169,7 +172,10 @@ namespace Naninovel.Spreadsheet
             }
 
             if (templateBuilder.Length > 0)
-                GetColumnValues(templateHeader).Add(templateBuilder.ToString());
+            {
+                var lastTemplateValue = templateBuilder.ToString().TrimEnd();
+                GetColumnValues(templateHeader).Add(lastTemplateValue);
+            }
 
             string ExtractManagedTextLocaleTag (string[] localization)
             {
