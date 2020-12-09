@@ -199,7 +199,7 @@ namespace Naninovel.Spreadsheet
             }
         }
 
-        public void FillColumnsFromSpreadsheet (SpreadsheetDocument document, Worksheet sheet)
+        private void FillColumnsFromSpreadsheet (SpreadsheetDocument document, Worksheet sheet)
         {
             for (int columnNumber = 1;; columnNumber++)
             {
