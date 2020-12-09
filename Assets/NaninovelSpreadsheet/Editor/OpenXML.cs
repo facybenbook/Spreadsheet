@@ -187,6 +187,7 @@ namespace Naninovel.Spreadsheet
             }
 
             var textValue = new Text(value);
+            textValue.Space = new EnumValue<SpaceProcessingModeValues>(SpaceProcessingModeValues.Preserve);
             var sharedItem = new SharedStringItem(textValue);
             sharedStringPart.SharedStringTable.AppendChild(sharedItem);
             sharedStringPart.SharedStringTable.Save();
