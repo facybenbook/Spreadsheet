@@ -67,19 +67,19 @@ namespace Naninovel.Spreadsheet
             }
             WriteLine(maxLength - 1);
             
-            File.WriteAllText(path, GetBuilder(templateHeader).ToString());
+            File.WriteAllText(path, GetBuilder(argumentHeader).ToString());
 
             void WriteLine (int lastArgIndex)
             {
                 var template = GetColumnValues(templateHeader)[lastTemplateIndex];
                 foreach (var header in columns.Keys)
                 {
-                    if (header == argumentHeader) continue;
-                    var values = GetColumnValues(argumentHeader);
+                    if (header == templateHeader) continue;
+                    var values = GetColumnValues(header);
                     var length = Mathf.Min(values.Count - 1, lastArgIndex) - lastTemplateIndex + 1;
-                    var args = GetColumnValues(argumentHeader).GetRange(lastTemplateIndex, length);
+                    var args = values.GetRange(lastTemplateIndex, length);
                     var composite = new Composite(template, args);
-                    GetBuilder(header).Append(composite.Value);
+                    GetBuilder(header).AppendLine(composite.Value);
                 }
             }
 
@@ -119,7 +119,7 @@ namespace Naninovel.Spreadsheet
 
             if (templateBuilder.Length > 0)
             {
-                var lastTemplateValue = templateBuilder.ToString().TrimEnd();
+                var lastTemplateValue = templateBuilder.ToString().TrimEnd(StringUtils.NewLineChars);
                 GetColumnValues(templateHeader).Add(lastTemplateValue);
             }
 
@@ -173,7 +173,7 @@ namespace Naninovel.Spreadsheet
 
             if (templateBuilder.Length > 0)
             {
-                var lastTemplateValue = templateBuilder.ToString().TrimEnd();
+                var lastTemplateValue = templateBuilder.ToString().TrimEnd(StringUtils.NewLineChars);
                 GetColumnValues(templateHeader).Add(lastTemplateValue);
             }
 
