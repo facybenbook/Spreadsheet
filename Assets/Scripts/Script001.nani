@@ -3,6 +3,7 @@ Lorem ipsum dolor sit amet, { Random(0, 10) } consectetur adipiscing elit. Fusce
 Praesent nec euismod ante. Sed sit amet pellentesque mauris. Sed viverra est nibh, vitae rhoncus lacus venenatis at. Mauris eget posuere urna, a dignissim nisl.
 @spawn Rain wait:false
 Mauris sit[br][i] amet lorem[spawn ShakePrinter params:,1 wait:false] sit amet nulla malesuada pulvinar.[skipInput]
+
 # TestLabel
 @resetText
 ; Test comment.
@@ -12,6 +13,7 @@ k: Ut et quam a dui imperdiet eleifend vitae eget neque.[i] Vestibulum sollicitu
 @char Kohaku pos:10,50,-1
 @choice "Test choice" pos:10,50
 @stop
+
 @despawn Rain wait:false
 y.Default: Donec ligula nulla, pulvinar a ex suscipit, gravida vulputate orci. Maecenas suscipit nisl vel nibh volutpat varius. Vestibulum turpis sapien, fermentum in tempor in, venenatis vel sapien.
 
