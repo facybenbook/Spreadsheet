@@ -79,7 +79,10 @@ namespace Naninovel.Spreadsheet
                     var length = Mathf.Min(values.Count - 1, lastArgIndex) - lastTemplateIndex + 1;
                     var args = values.GetRange(lastTemplateIndex, length);
                     var composite = new Composite(template, args);
-                    GetBuilder(header).AppendLine(composite.Value);
+                    var builder = GetBuilder(header);
+                    builder.Append(composite.Value);
+                    if (lastArgIndex == maxLength - 1)
+                        builder.AppendLine();
                 }
             }
 
