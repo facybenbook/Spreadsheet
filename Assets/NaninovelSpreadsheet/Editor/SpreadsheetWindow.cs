@@ -12,7 +12,7 @@ namespace Naninovel.Spreadsheet
         private string managedTextFolderPath { get => PlayerPrefs.GetString(GetPrefName()); set => PlayerPrefs.SetString(GetPrefName(), value); }
         private string localizationFolderPath { get => PlayerPrefs.GetString(GetPrefName()); set => PlayerPrefs.SetString(GetPrefName(), value); }
 
-        private static readonly GUIContent spreadsheetPathContent = new GUIContent("Spreadsheet", "The spreadsheet file (.xls or .xlsx).");
+        private static readonly GUIContent spreadsheetPathContent = new GUIContent("Spreadsheet", "The spreadsheet file (.xlsx).");
         private static readonly GUIContent scriptFolderPathContent = new GUIContent("Scripts", "Folder containing naninovel script files (optional).");
         private static readonly GUIContent textFolderPathContent = new GUIContent("Managed Text", "Folder containing managed text files (optional).");
         private static readonly GUIContent localizationFolderPathContent = new GUIContent("Localization", "Folder containing localization resources (optional).");
@@ -52,7 +52,7 @@ namespace Naninovel.Spreadsheet
             {
                 spreadsheetPath = EditorGUILayout.TextField(spreadsheetPathContent, spreadsheetPath);
                 if (GUILayout.Button("Select", EditorStyles.miniButton, GUILayout.Width(65)))
-                    spreadsheetPath = EditorUtility.OpenFilePanel(spreadsheetPathContent.text, "", "xls,xlsx");
+                    spreadsheetPath = EditorUtility.OpenFilePanel(spreadsheetPathContent.text, "", "xlsx");
             }
 
             using (new EditorGUILayout.HorizontalScope())
@@ -86,14 +86,14 @@ namespace Naninovel.Spreadsheet
                 if (GUILayout.Button("Import", GUIStyles.NavigationButton))
                     Import();
             }
-            else EditorGUILayout.HelpBox("Spreadsheet path is not valid; make sure it points to an existing .xls or .xlsx file.", MessageType.Error);
+            else EditorGUILayout.HelpBox("Spreadsheet path is not valid; make sure it points to an existing .xlsx file.", MessageType.Error);
 
             EditorGUILayout.Space();
         }
         
         private void ValidatePaths ()
         {
-            pathsValid = File.Exists(spreadsheetPath) && Path.GetExtension(spreadsheetPath) == ".xls" || Path.GetExtension(spreadsheetPath) == ".xlsx";
+            pathsValid = File.Exists(spreadsheetPath) && Path.GetExtension(spreadsheetPath) == ".xlsx";
         }
 
         private void Export ()
