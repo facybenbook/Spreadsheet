@@ -64,9 +64,8 @@ namespace Naninovel.Spreadsheet
                 var fullPath = LocalToFullPath(localPath);
                 var localizations = LocateLocalizationsFor(localPath, false);
                 var compositeSheet = new CompositeSheet(document, sheet);
-                var fromScript = fullPath.EndsWithFast(scriptFileExtension);
-                if (fromScript) compositeSheet.WriteToScript(fullPath, localizations);
-                else compositeSheet.WriteToManagedText(fullPath, localizations);
+                var managedText = fullPath.EndsWithFast(textFileExtension);
+                compositeSheet.WriteToProject(fullPath, localizations, managedText);
             }
             document.Dispose();
         }
@@ -151,7 +150,7 @@ namespace Naninovel.Spreadsheet
             var paths = new List<string>();
             foreach (var localeDir in Directory.EnumerateDirectories(localeFolderPath))
             {
-                var localizationPath = Path.Combine(localeDir, prefix, localPath);
+                var localizationPath = Path.Combine(localeDir, prefix, localPath).Replace('\\', '/');
                 if (skipMissing && !File.Exists(localizationPath))
                 {
                     Debug.LogWarning($"Missing localization resource for `{localPath}` (expected in `{localizationPath}`).");

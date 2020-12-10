@@ -52,7 +52,7 @@ namespace Naninovel.Spreadsheet
             sheet.Save();
         }
 
-        public void WriteToScript (string path, IReadOnlyCollection<string> localizations)
+        public void WriteToProject (string path, IReadOnlyCollection<string> localizations, bool managedText)
         {
             var builders = new Dictionary<string, StringBuilder>();
             var lastTemplateIndex = -1;
@@ -65,24 +65,44 @@ namespace Naninovel.Spreadsheet
                     WriteLine(i - 1);
                 lastTemplateIndex = i;
             }
-            WriteLine(maxLength - 1);
+            WriteLine(maxLength - 1, true);
             
-            File.WriteAllText(path, GetBuilder(argumentHeader).ToString());
+            foreach (var kv in builders)
+            {
+                var header = kv.Key;
+                var builder = kv.Value;
+                if (header == argumentHeader)
+                {
+                    File.WriteAllText(path, GetBuilder(argumentHeader).ToString());
+                    continue;
+                }
 
-            void WriteLine (int lastArgIndex)
+                var localizationPath = localizations.FirstOrDefault(p => p.Contains($"/{header}/"));
+                if (localizationPath is null || !File.Exists(localizationPath)) 
+                    throw new Exception($"Localization document for `{header}` not found. Try re-generating the localization documents.");
+                var localeHeader = File.ReadAllText(localizationPath).SplitByNewLine()[0];
+                if (managedText) localeHeader += Environment.NewLine;
+                File.WriteAllText(localizationPath, localeHeader + Environment.NewLine + builder);
+            }
+
+            void WriteLine (int lastArgIndex, bool lastLine = false)
             {
                 var template = GetColumnValues(templateHeader)[lastTemplateIndex];
+                var sourceArgs = GetColumnValuesAt(argumentHeader, lastTemplateIndex, lastArgIndex);
                 foreach (var header in columns.Keys)
                 {
                     if (header == templateHeader) continue;
-                    var values = GetColumnValues(header);
-                    var length = Mathf.Min(values.Count - 1, lastArgIndex) - lastTemplateIndex + 1;
-                    var args = values.GetRange(lastTemplateIndex, length);
-                    var composite = new Composite(template, args);
                     var builder = GetBuilder(header);
-                    builder.Append(composite.Value);
-                    if (lastArgIndex == maxLength - 1)
-                        builder.AppendLine();
+                    if (header == argumentHeader)
+                    {
+                        builder.Append(new Composite(template, sourceArgs).Value);
+                        if (lastLine) builder.AppendLine();
+                        continue;
+                    }
+
+                    var localizedArgs = GetColumnValuesAt(header, lastTemplateIndex, lastArgIndex);
+                    if (localizedArgs.Count > 0)
+                        AppendLocalizationLine(builder, template, localizedArgs, sourceArgs);
                 }
             }
 
@@ -95,11 +115,23 @@ namespace Naninovel.Spreadsheet
                 }
                 return builder;
             }
-        }
-        
-        public void WriteToManagedText (string path, IReadOnlyCollection<string> localizations)
-        {
-            
+
+            void AppendLocalizationLine (StringBuilder builder, string template, IEnumerable<string> localizedArgs, IEnumerable<string> sourceArgs)
+            {
+                var localizableTemplate = template.TrimEnd(StringUtils.NewLineChars).SplitByNewLine().Last();
+                var localizedLine = new Composite(localizableTemplate, localizedArgs).Value;
+                if (managedText)
+                {
+                    builder.AppendLine(localizedLine);
+                    return;
+                }
+                var sourceLine = new Composite(localizableTemplate, sourceArgs).Value;
+                var lineHash = CryptoUtils.PersistentHexCode(sourceLine.TrimFull());
+                builder.AppendLine()
+                    .AppendLine($"{LabelScriptLine.IdentifierLiteral} {lineHash}")
+                    .AppendLine($"{CommentScriptLine.IdentifierLiteral} {sourceLine}")
+                    .AppendLine(localizedLine);
+            }
         }
 
         private void FillColumnsFromScript (Script script, IReadOnlyCollection<Script> localizations)
@@ -249,7 +281,7 @@ namespace Naninovel.Spreadsheet
             localeTagsCache[cacheKey] = tag;
             return tag;
         }
-        
+
         private List<string> GetColumnValues (string header)
         {
             if (!columns.TryGetValue(header, out var values))
@@ -258,6 +290,13 @@ namespace Naninovel.Spreadsheet
                 columns[header] = values;
             }
             return values;
+        }
+        
+        private List<string> GetColumnValuesAt (string header, int startIndex, int endIndex)
+        {
+            var values = GetColumnValues(header);
+            var length = Mathf.Min(values.Count - 1, endIndex) - startIndex + 1;
+            return values.GetRange(startIndex, length);
         }
     }
 }
