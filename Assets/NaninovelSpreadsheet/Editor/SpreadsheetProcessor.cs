@@ -61,6 +61,11 @@ namespace Naninovel.Spreadsheet
                 var sheetName = sheetsNames[i];
                 var sheet = document.GetSheet(sheetName);
                 var localPath = SheetNameToLocalPath(sheetName);
+                if (localPath is null)
+                {
+                    Debug.LogWarning($"Sheet `{sheetName}` is unrecognized and will be ignored.");
+                    continue;
+                }
                 var fullPath = LocalToFullPath(localPath);
                 var localizations = LocateLocalizationsFor(localPath, false);
                 var compositeSheet = new CompositeSheet(document, sheet);
@@ -123,6 +128,7 @@ namespace Naninovel.Spreadsheet
         private string SheetNameToLocalPath (string sheetName)
         {
             var namePrefix = sheetName.StartsWithFast(scriptSheetNamePrefix) ? scriptSheetNamePrefix : textSheetNamePrefix;
+            if (!sheetName.Contains(namePrefix)) return null;
             var fileExtension = namePrefix == scriptSheetNamePrefix ? scriptFileExtension : textFileExtension;
             return sheetName.GetAfterFirst(namePrefix).Replace(sheetPathSeparator, "/") + fileExtension;
         }

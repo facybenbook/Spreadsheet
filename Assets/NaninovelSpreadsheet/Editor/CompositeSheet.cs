@@ -116,7 +116,7 @@ namespace Naninovel.Spreadsheet
                 return builder;
             }
 
-            void AppendLocalizationLine (StringBuilder builder, string template, IEnumerable<string> localizedArgs, IEnumerable<string> sourceArgs)
+            void AppendLocalizationLine (StringBuilder builder, string template, IReadOnlyList<string> localizedArgs, IReadOnlyList<string> sourceArgs)
             {
                 var localizableTemplate = template.TrimEnd(StringUtils.NewLineChars).SplitByNewLine().Last();
                 var localizedLine = new Composite(localizableTemplate, localizedArgs).Value;
@@ -129,8 +129,9 @@ namespace Naninovel.Spreadsheet
                 var lineHash = CryptoUtils.PersistentHexCode(sourceLine.TrimFull());
                 builder.AppendLine()
                     .AppendLine($"{LabelScriptLine.IdentifierLiteral} {lineHash}")
-                    .AppendLine($"{CommentScriptLine.IdentifierLiteral} {sourceLine}")
-                    .AppendLine(localizedLine);
+                    .AppendLine($"{CommentScriptLine.IdentifierLiteral} {sourceLine}");
+                if (!localizedArgs.All(string.IsNullOrWhiteSpace))
+                    builder.AppendLine(localizedLine);
             }
         }
 
