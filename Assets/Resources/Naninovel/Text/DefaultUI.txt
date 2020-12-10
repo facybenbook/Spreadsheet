@@ -67,4 +67,3 @@ TitleMenu.NewGame: NEW GAME
 TitleMenu.Settings: SETTINGS
 TitleMenu.Tips: TIPS
 VariableInput.Submit: SUBMIT
-
