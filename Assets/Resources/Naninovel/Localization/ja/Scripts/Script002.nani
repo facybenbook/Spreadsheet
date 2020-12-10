@@ -6,7 +6,7 @@
 
 # a73cb3af
 ; @input i summary:"Test summary" value:"Test value"
-@input i summary:"冬投夜ワ半" value:"ごず楽乗ヤケレ"
+@input i summary:冬投夜ワ半 value:ごず楽乗ヤケレ
 
 # dc558eda
 ; You've entered: `{i}`.

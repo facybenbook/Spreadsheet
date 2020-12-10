@@ -18,11 +18,11 @@ k: 済供際ナ社県わさ真囲イ須生備ミ京5準[i]ネユホ刺三進ょ�
 
 # 1ced4e64
 ; @print "Donec ut libero rutrum, \"porta tortor\" ut, volutpat nulla." speed:0.5 default:false
-@print "側チ輸富ハ鉄青フ堂購ソホ権文\"ぞゅゆょ収港\"すなおで問9断まりつ詐経ざ一" speed:0.5 default:false
+@print 側チ輸富ハ鉄青フ堂購ソホ権文"ぞゅゆょ収港"すなおで問9断まりつ詐経ざ一 speed:0.5 default:false
 
 # de2c2a3a
 ; @choice "Test choice" pos:10,50
-@choice "速らな設" pos:10,50
+@choice 速らな設 pos:10,50
 
 # fc0c5eab
 ; y.Default: Donec ligula nulla, pulvinar a ex suscipit, gravida vulputate orci. Maecenas suscipit nisl vel nibh volutpat varius. Vestibulum turpis sapien, fermentum in tempor in, venenatis vel sapien.

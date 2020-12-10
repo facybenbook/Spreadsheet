@@ -1,4 +1,4 @@
-﻿CGGallery.Title: CG GALLERY
+CGGallery.Title: CG GALLERY
 Confirmation.No: NO
 Confirmation.Yes: YES
 ControlPanel.Auto: AUTO
@@ -67,3 +67,4 @@ TitleMenu.NewGame: NEW GAME
 TitleMenu.Settings: SETTINGS
 TitleMenu.Tips: TIPS
 VariableInput.Submit: SUBMIT
+
