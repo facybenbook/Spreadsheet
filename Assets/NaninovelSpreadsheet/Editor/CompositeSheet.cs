@@ -96,7 +96,7 @@ namespace Naninovel.Spreadsheet
                     if (header == argumentHeader)
                     {
                         builder.Append(new Composite(template, sourceArgs).Value);
-                        if (lastLine) builder.AppendLine();
+                        if (lastLine || managedText) builder.AppendLine();
                         continue;
                     }
 
@@ -195,7 +195,7 @@ namespace Naninovel.Spreadsheet
                     line.StartsWithFast(ManagedTextUtils.RecordCommentLiteral)) continue;
 
                 var composite = new Composite(line);
-                FillColumnsFromComposite(composite, templateBuilder);
+                FillColumnsFromComposite(composite, templateBuilder, false);
 
                 if (composite.Arguments.Count == 0) continue;
                 foreach (var localization in localizationLines)
@@ -252,9 +252,10 @@ namespace Naninovel.Spreadsheet
             }
         }
 
-        private void FillColumnsFromComposite (Composite composite, StringBuilder templateBuilder)
+        private void FillColumnsFromComposite (Composite composite, StringBuilder templateBuilder, bool appendLine = true)
         {
-            templateBuilder.AppendLine(composite.Template);
+            templateBuilder.Append(composite.Template);
+            if (appendLine) templateBuilder.AppendLine();
             if (composite.Arguments.Count == 0) return;
 
             foreach (var arg in composite.Arguments)
