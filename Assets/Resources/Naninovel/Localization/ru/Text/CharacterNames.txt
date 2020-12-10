@@ -1,4 +1,4 @@
-﻿; English <en> to Русский <ru> localization document for `CharacterNames` managed text document
+; English <en> to Русский <ru> localization document for `CharacterNames` managed text document
 
 k: Кохаку
 y: Юко

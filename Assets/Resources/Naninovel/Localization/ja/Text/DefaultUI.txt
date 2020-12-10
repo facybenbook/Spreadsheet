@@ -1,4 +1,4 @@
-﻿; English <en> to Japanese <ja> localization document for `DefaultUI` managed text document
+; English <en> to Japanese <ja> localization document for `DefaultUI` managed text document
 
 CGGallery.Title: CG GALLERY
 Confirmation.No: NO

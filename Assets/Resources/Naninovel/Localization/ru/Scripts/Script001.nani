@@ -1,7 +1,7 @@
 ; English <en> to Русский <ru> localization document for `Script001` naninovel script
 
 # a67ab5f6
-; Lorem ipsum dolor sit amet, { Random(0, 10) } consectetur adipiscing elit. Fusce ut mauris sem. Fusce ipsum leo, luctus sit amet quam convallis, suscipit scelerisque dolor. Maecenas sit amet pulvinar felis, sed aliquam est. Mauris tincidunt tincidunt sapien non dictum. In quis mauris nibh.[i] Quisque ipsum eros, lacinia at lobortis vitae, semper ut ante. Sed lobortis id sapien vitae auctor. Quisque consectetur aliquet vulputate. Mauris fringilla neque non bibendum aliquet. 
+; Lorem ipsum dolor sit amet, { Random(0, 10) } consectetur adipiscing elit. Fusce ut mauris sem. Fusce ipsum leo, luctus sit amet quam convallis, suscipit scelerisque dolor. Maecenas sit amet pulvinar felis, sed aliquam est. Mauris tincidunt tincidunt sapien non dictum. In quis mauris nibh.[i] Quisque ipsum eros, lacinia at lobortis vitae, semper ut ante. Sed lobortis id sapien vitae auctor. Quisque consectetur aliquet vulputate. Mauris fringilla neque non bibendum aliquet.
 Суждение последовательно. Угловое расстояние, { Random(0, 10) } на первый взгляд, пространственно транспонирует трагический здравый смысл, хотя это явно видно на фотогpафической пластинке, полученной с помощью 1.2-метpового телескопа.[i] Звезда на следующий год, когда было лунное затмение и сгорел древний храм Афины в Афинах (при эфоре Питии и афинском архонте Каллии), недоступно решает непреложный натуральный логарифм. Наряду с этим газопылевое облако многопланово гасит даосизм, изменяя привычную реальность.
 
 # 2991eba4
@@ -13,7 +13,7 @@
 Антропосоциология творит параметр.[br][i] Суждение преобразует[spawn ShakePrinter params:,1 wait:false] экваториальный перигелий.[skipInput]
 
 # a9f9b1d9
-; k: Ut et quam a dui imperdiet eleifend vitae eget neque.[i] Vestibulum sollicitudin et tortor sed dignissim.[br 2] Aliquam sit amet urna sollicitudin, fringilla dui ac, imperdiet elit. 
+; k: Ut et quam a dui imperdiet eleifend vitae eget neque.[i] Vestibulum sollicitudin et tortor sed dignissim.[br 2] Aliquam sit amet urna sollicitudin, fringilla dui ac, imperdiet elit.
 k: Адживика, как принято считать, порождена временем.[i] Ощущение мира точно притягивает сложный зенит, отрицая очевидное.[br 2] После того как тема сформулирована, закон исключённого третьего оценивает трагический реликтовый ледник.
 
 # 1ced4e64
@@ -25,5 +25,5 @@ k: Адживика, как принято считать, порождена в
 @choice "Структурализм изменяем" pos:10,50
 
 # fc0c5eab
-; y.Default: Donec ligula nulla, pulvinar a ex suscipit, gravida vulputate orci. Maecenas suscipit nisl vel nibh volutpat varius. Vestibulum turpis sapien, fermentum in tempor in, venenatis vel sapien. 
+; y.Default: Donec ligula nulla, pulvinar a ex suscipit, gravida vulputate orci. Maecenas suscipit nisl vel nibh volutpat varius. Vestibulum turpis sapien, fermentum in tempor in, venenatis vel sapien.
 y.Default: Страсть ищет гравитационный парадокс. Юлианская дата наблюдаема. Восход , по определению, представляет собой эллиптический предмет деятельности, изменяя привычную реальность.

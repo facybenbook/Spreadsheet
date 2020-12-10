@@ -1,4 +1,4 @@
-﻿; English <en> to Русский <ru> localization document for `DefaultUI` managed text document
+; English <en> to Русский <ru> localization document for `DefaultUI` managed text document
 
 CGGallery.Title: CG GALLERY
 Confirmation.No: NO
