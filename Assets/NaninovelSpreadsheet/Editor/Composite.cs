@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Text.RegularExpressions;
 using Naninovel.Commands;
 
 namespace Naninovel.Spreadsheet
@@ -17,6 +18,7 @@ namespace Naninovel.Spreadsheet
         public readonly IReadOnlyList<string> Arguments;
 
         private static readonly string[] emptyArgs = new string[0];
+        private static Regex argRegex = new Regex(@"(?<!\\)\{(\d+?)(?<!\\)\}");
 
         public Composite (string template, IEnumerable<string> args)
         {
@@ -41,7 +43,16 @@ namespace Naninovel.Spreadsheet
         
         private static string BuildTemplate (string template, IReadOnlyList<string> args)
         {
-            return args.Count > 0 ? string.Format(template, args.Cast<object>().ToArray()) : template;
+            if (args.Count == 0) return template;
+
+            foreach (var match in argRegex.Matches(template).Cast<Match>())
+            {
+                var index = int.Parse(match.Value.GetBetween("{", "}"));
+                var arg = args[index];
+                template = template.Replace(match.Value, arg);
+            }
+            
+            return template;
         }
 
         private static (string template, IReadOnlyList<string> args) ParseScriptLine (ScriptLine line)
