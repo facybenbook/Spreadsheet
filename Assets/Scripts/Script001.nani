@@ -10,7 +10,7 @@ Mauris sit[br][i] amet lorem[spawn ShakePrinter params:,1 wait:false] sit amet n
 @printer Wide time:0
 k: Ut et quam a dui imperdiet eleifend vitae eget neque.[i] Vestibulum sollicitudin et tortor sed dignissim.[br 2] Aliquam sit amet urna sollicitudin, fringilla dui ac, imperdiet elit.
 @print "Donec ut libero rutrum, \"porta tortor\" ut, volutpat nulla." speed:0.5 default:false
-@print \{{ Random(0, 10) }\}
+@print "\{ { Random(0, 10) } \}"
 @char Kohaku pos:10,50,-1
 @choice "Test choice" pos:10,50
 @stop
