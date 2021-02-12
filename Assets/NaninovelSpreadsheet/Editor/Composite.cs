@@ -5,6 +5,8 @@ using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using Naninovel.Commands;
+using Naninovel.Lexing;
+using Naninovel.Parsing;
 
 namespace Naninovel.Spreadsheet
 {
@@ -26,21 +28,21 @@ namespace Naninovel.Spreadsheet
             Arguments = args?.ToArray() ?? emptyArgs;
             Value = BuildTemplate(Template, Arguments);
         }
-        
+
         public Composite (ScriptLine scriptLine)
         {
             (Template, Arguments) = ParseScriptLine(scriptLine);
             Value = BuildTemplate(Template, Arguments);
         }
-        
+
         public Composite (string managedTextLine)
         {
             Value = managedTextLine;
             (Template, Arguments) = ParseManagedText(managedTextLine);
         }
-        
+
         private static string BuildPlaceholder (int index) => $"{{{index}}}";
-        
+
         private static string BuildTemplate (string template, IReadOnlyList<string> args)
         {
             if (args.Count == 0) return template;
@@ -51,27 +53,27 @@ namespace Naninovel.Spreadsheet
                 var arg = args[index];
                 template = template.Replace(match.Value, arg);
             }
-            
+
             return template;
         }
 
         private static (string template, IReadOnlyList<string> args) ParseScriptLine (ScriptLine line)
         {
-            if (line is CommandScriptLine commandLine) 
+            if (line is CommandScriptLine commandLine)
                 return ParseCommandLine(commandLine);
-            if (line is GenericTextScriptLine genericLine) 
+            if (line is GenericTextScriptLine genericLine)
                 return ParseGenericLine(genericLine);
             if (line is CommentScriptLine commentLine)
-                return (string.IsNullOrEmpty(commentLine.CommentText) ? string.Empty : $"{CommentScriptLine.IdentifierLiteral} {commentLine.CommentText}", emptyArgs);
+                return (string.IsNullOrEmpty(commentLine.CommentText) ? string.Empty : $"{Constants.CommandLineId} {commentLine.CommentText}", emptyArgs);
             if (line is LabelScriptLine labelLine)
-                return ($"{LabelScriptLine.IdentifierLiteral} {labelLine.LabelText}", emptyArgs);
+                return ($"{Constants.LabelLineId} {labelLine.LabelText}", emptyArgs);
             throw new Exception($"Unknown command line type: {line.GetType().Name}");
         }
-        
+
         private static (string template, IReadOnlyList<string> args) ParseCommandLine (CommandScriptLine commandLine)
         {
             var (commandTemplate, args) = ParseCommand(commandLine.Command);
-            return (CommandScriptLine.IdentifierLiteral + commandTemplate, args);
+            return (Constants.CommandLineId + commandTemplate, args);
         }
 
         private static (string template, IReadOnlyList<string> args) ParseCommand (Command command, int argOffset = 0)
@@ -85,16 +87,16 @@ namespace Naninovel.Spreadsheet
             {
                 var parameter = field.GetValue(command) as ICommandParameter;
                 if (parameter is null || !Command.Assigned(parameter)) continue;
-                
-                var value = Command.EscapeParameterValue(parameter.ToString());
+
+                var value = Helpers.EncodeValue(parameter.ToString(), true, true);
                 if (field.GetCustomAttribute<Command.ParameterDefaultValueAttribute>()?.Value == value) continue;
-                
+
                 templateBuilder.Append(" ");
-                
+
                 var name = field.GetCustomAttribute<Command.ParameterAliasAttribute>()?.Alias ?? field.Name.FirstToLower();
                 if (name != Command.NamelessParameterAlias)
-                    templateBuilder.Append(name).Append(Command.ParameterAssignLiteral);
-                
+                    templateBuilder.Append(name).Append(Constants.ParamAssignId);
+
                 if (Attribute.IsDefined(field, typeof(Command.LocalizableParameterAttribute)))
                 {
                     args.Add(value);
@@ -102,33 +104,35 @@ namespace Naninovel.Spreadsheet
                 }
                 else templateBuilder.Append(value);
             }
-            
+
             return (templateBuilder.ToString(), args);
         }
-        
+
         private static (string template, IReadOnlyList<string> args) ParseGenericLine (GenericTextScriptLine line)
         {
             var args = new List<string>();
             var templateBuilder = new StringBuilder();
-            
+
             var authorId = line.InlinedCommands.OfType<PrintText>()
                 .FirstOrDefault(p => Command.Assigned(p.AuthorId) && !p.AuthorId.DynamicValue)?.AuthorId.Value;
             if (!string.IsNullOrEmpty(authorId))
             {
                 templateBuilder.Append(authorId);
                 var appearance = line.InlinedCommands.First() is ModifyCharacter mc
-                                 && Command.Assigned(mc.IdAndAppearance) && !mc.IdAndAppearance.DynamicValue 
-                                 && mc.IdAndAppearance.NamedValue.HasValue ? mc.IdAndAppearance.NamedValue : null;
+                                 && Command.Assigned(mc.IdAndAppearance) && !mc.IdAndAppearance.DynamicValue
+                                 && mc.IdAndAppearance.NamedValue.HasValue
+                    ? mc.IdAndAppearance.NamedValue
+                    : null;
                 if (!string.IsNullOrEmpty(appearance))
-                    templateBuilder.Append(GenericTextScriptLine.AuthorAppearanceLiteral).Append(appearance);
-                templateBuilder.Append(GenericTextScriptLine.AuthorIdLiteral);
+                    templateBuilder.Append(Constants.AuthorAppearanceId).Append(appearance);
+                templateBuilder.Append(Constants.AuthorAssignId);
             }
 
             for (int i = 0; i < line.InlinedCommands.Count; i++)
             {
                 var command = line.InlinedCommands[i];
                 if (i == 0 && command is ModifyCharacter) continue;
-                
+
                 if (command is PrintText print)
                 {
                     args.Add(print.Text.ToString());
@@ -137,20 +141,20 @@ namespace Naninovel.Spreadsheet
                         templateBuilder.Append("[i]");
                     continue;
                 }
-                
+
                 var (commandTemplate, commandArgs) = ParseCommand(command, args.Count);
                 args.AddRange(commandArgs);
                 templateBuilder.Append($"[{commandTemplate}]");
             }
-            
+
             return (templateBuilder.ToString(), args);
         }
-        
+
         private static (string template, IReadOnlyList<string> args) ParseManagedText (string line)
         {
             if (string.IsNullOrWhiteSpace(line) || !line.Contains(ManagedTextUtils.RecordIdLiteral))
                 return (line, emptyArgs);
-            
+
             var id = line.GetBefore(ManagedTextUtils.RecordIdLiteral);
             var lhsLength = id.Length + ManagedTextUtils.RecordIdLiteral.Length;
             var value = line.Substring(lhsLength);

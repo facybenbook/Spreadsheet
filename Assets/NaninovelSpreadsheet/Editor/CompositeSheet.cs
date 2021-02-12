@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Spreadsheet;
+using Naninovel.Lexing;
 using UnityEngine;
 
 namespace Naninovel.Spreadsheet
@@ -13,7 +14,7 @@ namespace Naninovel.Spreadsheet
     {
         private const string templateHeader = "Template";
         private const string argumentHeader = "Arguments";
-        
+
         private readonly Dictionary<string, List<string>> columns = new Dictionary<string, List<string>>();
         private readonly Dictionary<int, string> localeTagsCache = new Dictionary<int, string>();
 
@@ -21,12 +22,12 @@ namespace Naninovel.Spreadsheet
         {
             FillColumnsFromScript(script, localizations);
         }
-        
+
         public CompositeSheet (string managedText, IReadOnlyCollection<string> localizations)
         {
             FillColumnsFromManagedText(managedText, localizations);
         }
-        
+
         public CompositeSheet (SpreadsheetDocument document, Worksheet sheet)
         {
             FillColumnsFromSpreadsheet(document, sheet);
@@ -66,7 +67,7 @@ namespace Naninovel.Spreadsheet
                 lastTemplateIndex = i;
             }
             WriteLine(maxLength - 1, true);
-            
+
             foreach (var kv in builders)
             {
                 var header = kv.Key;
@@ -78,7 +79,7 @@ namespace Naninovel.Spreadsheet
                 }
 
                 var localizationPath = localizations.FirstOrDefault(p => p.Contains($"/{header}/"));
-                if (localizationPath is null || !File.Exists(localizationPath)) 
+                if (localizationPath is null || !File.Exists(localizationPath))
                     throw new Exception($"Localization document for `{header}` not found. Try re-generating the localization documents.");
                 var localeHeader = File.ReadAllText(localizationPath).SplitByNewLine()[0];
                 if (managedText) localeHeader += Environment.NewLine;
@@ -128,8 +129,8 @@ namespace Naninovel.Spreadsheet
                 var sourceLine = new Composite(localizableTemplate, sourceArgs).Value;
                 var lineHash = CryptoUtils.PersistentHexCode(sourceLine.TrimFull());
                 builder.AppendLine()
-                    .AppendLine($"{LabelScriptLine.IdentifierLiteral} {lineHash}")
-                    .AppendLine($"{CommentScriptLine.IdentifierLiteral} {sourceLine}");
+                    .AppendLine($"{Constants.LabelLineId} {lineHash}")
+                    .AppendLine($"{Constants.CommandLineId} {sourceLine}");
                 if (!localizedArgs.All(string.IsNullOrWhiteSpace))
                     builder.AppendLine(localizedLine);
             }
@@ -138,12 +139,12 @@ namespace Naninovel.Spreadsheet
         private void FillColumnsFromScript (Script script, IReadOnlyCollection<Script> localizations)
         {
             var templateBuilder = new StringBuilder();
-            
+
             foreach (var line in script.Lines)
             {
                 var composite = new Composite(line);
                 FillColumnsFromComposite(composite, templateBuilder);
-                
+
                 if (composite.Arguments.Count == 0) continue;
                 foreach (var localizationScript in localizations)
                 {
@@ -164,23 +165,23 @@ namespace Naninovel.Spreadsheet
                 var firstCommentText = localizationScript.Lines.OfType<CommentScriptLine>().FirstOrDefault()?.CommentText;
                 return ExtractLocaleTag(localizationScript.GetHashCode(), firstCommentText);
             }
-            
+
             IReadOnlyList<string> GetLocalizedValues (ScriptLine line, string locale, Script localizationScript, int argsCount)
             {
                 var startIndex = localizationScript.GetLineIndexForLabel(line.LineHash);
                 if (startIndex == -1)
-                    throw new Exception($"Failed to find `{locale}` localization for `{line.ScriptName}` script at line #{line.LineNumber}. Try re-generating localization documents.");
+                    throw new Exception($"Failed to find `{locale}` localization for `{script.Name}` script at line #{line.LineNumber}. Try re-generating localization documents.");
                 var endIndex = localizationScript.FindLine<LabelScriptLine>(l => l.LineIndex > startIndex)?.LineIndex ?? localizationScript.Lines.Count;
                 var localizationLines = localizationScript.Lines
                     .Where(l => (l is CommandScriptLine || l is GenericTextScriptLine gl && gl.InlinedCommands.Count > 0) && l.LineIndex > startIndex && l.LineIndex < endIndex).ToArray();
                 if (localizationLines.Length > 1)
-                    Debug.LogWarning($"Multiple `{locale}` localization lines found for `{line.ScriptName}` script at line #{line.LineNumber}. Only the first one will be exported to the spreadsheet.");
+                    Debug.LogWarning($"Multiple `{locale}` localization lines found for `{script.name}` script at line #{line.LineNumber}. Only the first one will be exported to the spreadsheet.");
                 if (localizationLines.Length == 0)
                     return Enumerable.Repeat(string.Empty, argsCount).ToArray();
-                
+
                 var localizedComposite = new Composite(localizationLines.First());
                 if (localizedComposite.Arguments.Count != argsCount)
-                    throw new Exception($"`{locale}` localization for `{line.ScriptName}` script at line #{line.LineNumber} is invalid. Make sure it preserves original commands.");
+                    throw new Exception($"`{locale}` localization for `{script.name}` script at line #{line.LineNumber} is invalid. Make sure it preserves original commands.");
                 return localizedComposite.Arguments;
             }
         }
@@ -192,7 +193,7 @@ namespace Naninovel.Spreadsheet
 
             foreach (var line in managedText.SplitByNewLine())
             {
-                if (!line.Contains(ManagedTextUtils.RecordIdLiteral) || 
+                if (!line.Contains(ManagedTextUtils.RecordIdLiteral) ||
                     line.StartsWithFast(ManagedTextUtils.RecordCommentLiteral)) continue;
 
                 var composite = new Composite(line);
@@ -270,16 +271,16 @@ namespace Naninovel.Spreadsheet
                 GetColumnValues(argumentHeader).Add(arg);
             }
         }
-        
+
         private string ExtractLocaleTag (int cacheKey, string content)
         {
             if (localeTagsCache.TryGetValue(cacheKey, out var result))
                 return result;
-                
+
             var tag = content?.GetAfter("<")?.GetBefore(">");
             if (string.IsNullOrWhiteSpace(tag))
                 throw new Exception($"Failed to extract localization tag from `{content}`. Try re-generating localization documents.");
-                
+
             localeTagsCache[cacheKey] = tag;
             return tag;
         }
@@ -293,7 +294,7 @@ namespace Naninovel.Spreadsheet
             }
             return values;
         }
-        
+
         private List<string> GetColumnValuesAt (string header, int startIndex, int endIndex)
         {
             var values = GetColumnValues(header);
