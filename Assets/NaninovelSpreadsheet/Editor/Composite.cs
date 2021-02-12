@@ -17,6 +17,7 @@ namespace Naninovel.Spreadsheet
         public readonly IReadOnlyList<string> Arguments;
 
         private static readonly string[] emptyArgs = new string[0];
+        private static readonly LineText[] emptyLocalizables = new LineText[0];
         private static Regex argRegex = new Regex(@"(?<!\\)\{(\d+?)(?<!\\)\}", RegexOptions.Compiled);
         private static readonly ProjectMetadata projectMeta = new ProjectMetadata();
 
@@ -91,53 +92,50 @@ namespace Naninovel.Spreadsheet
 
         private static (string template, IReadOnlyList<string> args) ParseCommandLine (CommandLine model, string lineText)
         {
-            var (commandTemplate, args) = ParseCommand(model.Command, lineText);
-            return (Constants.CommandLineId + commandTemplate, args);
+            var localizables = GetLocalizableParameters(model.Command);
+            return ParseLocalizables(localizables, lineText);
         }
 
-        private static (string template, IReadOnlyList<string> args) ParseCommand (Parsing.Command command, string lineText, int argOffset = 0)
+        private static IReadOnlyList<LineText> GetLocalizableParameters (Parsing.Command command)
         {
             var commandMeta = projectMeta.commands.FirstOrDefault(c => (c.id?.EqualsFastIgnoreCase(command.Identifier) ?? false) ||
                                                                        (c.alias?.EqualsFastIgnoreCase(command.Identifier) ?? false));
             if (commandMeta is null) throw new Exception($"Unknown command: `{command.Identifier}`");
-            if (!commandMeta.localizable) return (lineText, emptyArgs);
+            if (!commandMeta.localizable) return emptyLocalizables;
 
-            var args = new List<string>();
+            var localizables = new List<LineText>();
             foreach (var parameter in command.Parameters)
             {
                 var meta = commandMeta.@params.FirstOrDefault(c => (c.id?.EqualsFastIgnoreCase(parameter.Identifier) ?? false) ||
                                                                    (c.alias?.EqualsFastIgnoreCase(parameter.Identifier) ?? false));
                 if (meta is null) throw new Exception($"Unknown parameter in `{command.Identifier}` command: `{parameter.Identifier}`");
-                if (!meta.localizable) continue;
-                args.Add(parameter.Value);
-                var placeholder = BuildPlaceholder(args.Count - 1 + argOffset);
-                lineText = lineText.Remove(parameter.StartIndex, parameter.Length).Insert(parameter.StartIndex, placeholder);
+                if (meta.localizable) localizables.Add(parameter.Value);
             }
-
-            return (lineText, args);
+            return localizables;
         }
 
-        private static (string template, IReadOnlyList<string> args) ParseGenericLine (GenericTextLine model, string lineText)
+        private static (string template, IReadOnlyList<string> args) ParseGenericLine (GenericTextLine line, string lineText)
         {
-            var args = new List<string>();
-            foreach (var content in model.Content)
-                if (content is Parsing.Command command) ParseInlinedCommand(command);
-                else ParseGenericText(content as GenericText);
+            var localizables = new List<LineText>();
+            foreach (var content in line.Content)
+                if (content is Parsing.Command command)
+                    localizables.AddRange(GetLocalizableParameters(command));
+                else localizables.Add(content as GenericText);
+            return ParseLocalizables(localizables, lineText);
+        }
 
-            void ParseInlinedCommand (Parsing.Command command)
+        private static (string template, IReadOnlyList<string> args) ParseLocalizables (IReadOnlyList<LineText> localizables, string lineText)
+        {
+            var args = new string[localizables.Count];
+            for (int i = localizables.Count - 1; i >= 0; --i)
             {
-                var (template, commandArgs) = ParseCommand(command, lineText, args.Count);
-                lineText = template;
-                args.AddRange(commandArgs);
+                var localizable = localizables[i];
+                var placeholder = BuildPlaceholder(i);
+                args[i] = localizable.Text;
+                lineText = lineText
+                    .Remove(localizable.StartIndex, localizable.Length)
+                    .Insert(localizable.StartIndex, placeholder);
             }
-
-            void ParseGenericText (GenericText text)
-            {
-                var placeholder = BuildPlaceholder(args.Count - 1);
-                lineText = lineText.Remove(text.StartIndex, text.Length).Insert(text.StartIndex, placeholder);
-                args.Add(text.Text);
-            }
-
             return (lineText, args);
         }
 
