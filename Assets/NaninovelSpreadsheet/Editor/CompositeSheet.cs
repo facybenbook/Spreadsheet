@@ -17,8 +17,10 @@ namespace Naninovel.Spreadsheet
 
         private readonly Dictionary<string, List<string>> columns = new Dictionary<string, List<string>>();
         private readonly Dictionary<int, string> localeTagsCache = new Dictionary<int, string>();
+        private readonly List<Token> tokens = new List<Token>();
+        private readonly Lexer lexer = new Lexer();
 
-        public CompositeSheet (Script script, IReadOnlyCollection<Script> localizations)
+        public CompositeSheet (ScriptText script, IReadOnlyCollection<ScriptText> localizations)
         {
             FillColumnsFromScript(script, localizations);
         }
@@ -136,13 +138,17 @@ namespace Naninovel.Spreadsheet
             }
         }
 
-        private void FillColumnsFromScript (Script script, IReadOnlyCollection<Script> localizations)
+        private void FillColumnsFromScript (ScriptText script, IReadOnlyCollection<ScriptText> localizations)
         {
             var templateBuilder = new StringBuilder();
 
-            foreach (var line in script.Lines)
+            for (int i = 0; i < script.TextLines.Count; i++)
             {
-                var composite = new Composite(line);
+                var lineText = script.TextLines[i];
+                var line = script.Script.Lines[i];
+                tokens.Clear();
+                var lineType = lexer.TokenizeLine(lineText, tokens);
+                var composite = new Composite(lineText, lineType, tokens);
                 FillColumnsFromComposite(composite, templateBuilder);
 
                 if (composite.Arguments.Count == 0) continue;
@@ -160,28 +166,31 @@ namespace Naninovel.Spreadsheet
                 GetColumnValues(templateHeader).Add(lastTemplateValue);
             }
 
-            string ExtractScriptLocaleTag (Script localizationScript)
+            string ExtractScriptLocaleTag (ScriptText localizationScript)
             {
-                var firstCommentText = localizationScript.Lines.OfType<CommentScriptLine>().FirstOrDefault()?.CommentText;
+                var firstCommentText = localizationScript.Script.Lines.OfType<CommentScriptLine>().FirstOrDefault()?.CommentText;
                 return ExtractLocaleTag(localizationScript.GetHashCode(), firstCommentText);
             }
 
-            IReadOnlyList<string> GetLocalizedValues (ScriptLine line, string locale, Script localizationScript, int argsCount)
+            IReadOnlyList<string> GetLocalizedValues (ScriptLine line, string locale, ScriptText localizationScript, int argsCount)
             {
-                var startIndex = localizationScript.GetLineIndexForLabel(line.LineHash);
+                var startIndex = localizationScript.Script.GetLineIndexForLabel(line.LineHash);
                 if (startIndex == -1)
                     throw new Exception($"Failed to find `{locale}` localization for `{script.Name}` script at line #{line.LineNumber}. Try re-generating localization documents.");
-                var endIndex = localizationScript.FindLine<LabelScriptLine>(l => l.LineIndex > startIndex)?.LineIndex ?? localizationScript.Lines.Count;
-                var localizationLines = localizationScript.Lines
+                var endIndex = localizationScript.Script.FindLine<LabelScriptLine>(l => l.LineIndex > startIndex)?.LineIndex ?? localizationScript.Script.Lines.Count;
+                var localizationLines = localizationScript.Script.Lines
                     .Where(l => (l is CommandScriptLine || l is GenericTextScriptLine gl && gl.InlinedCommands.Count > 0) && l.LineIndex > startIndex && l.LineIndex < endIndex).ToArray();
                 if (localizationLines.Length > 1)
-                    Debug.LogWarning($"Multiple `{locale}` localization lines found for `{script.name}` script at line #{line.LineNumber}. Only the first one will be exported to the spreadsheet.");
+                    Debug.LogWarning($"Multiple `{locale}` localization lines found for `{script.Name}` script at line #{line.LineNumber}. Only the first one will be exported to the spreadsheet.");
                 if (localizationLines.Length == 0)
                     return Enumerable.Repeat(string.Empty, argsCount).ToArray();
 
-                var localizedComposite = new Composite(localizationLines.First());
+                var localizationLineText = localizationScript.TextLines[localizationLines.First().LineIndex];
+                tokens.Clear();
+                var lineType = lexer.TokenizeLine(localizationLineText, tokens);
+                var localizedComposite = new Composite(localizationLineText, lineType, tokens);
                 if (localizedComposite.Arguments.Count != argsCount)
-                    throw new Exception($"`{locale}` localization for `{script.name}` script at line #{line.LineNumber} is invalid. Make sure it preserves original commands.");
+                    throw new Exception($"`{locale}` localization for `{script.Name}` script at line #{line.LineNumber} is invalid. Make sure it preserves original commands.");
                 return localizedComposite.Arguments;
             }
         }

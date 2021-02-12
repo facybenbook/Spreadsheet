@@ -31,7 +31,7 @@ namespace Naninovel.Spreadsheet
         private readonly string textFolderPath;
         private readonly string localeFolderPath;
         private readonly Action<ProgressChangedArgs> onProgress;
-        
+
         public SpreadsheetProcessor (Parameters parameters, Action<ProgressChangedArgs> onProgress = default)
         {
             spreadsheetPath = parameters.SpreadsheetPath;
@@ -133,26 +133,21 @@ namespace Naninovel.Spreadsheet
             return sheetName.GetAfterFirst(namePrefix).Replace(sheetPathSeparator, "/") + fileExtension;
         }
 
-        private Script LoadScriptAtPath (string scriptPath)
+        private ScriptText LoadScriptAtPath (string scriptPath)
         {
-            var assetPath = PathUtils.AbsoluteToAssetPath(scriptPath);
-            var script = AssetDatabase.LoadAssetAtPath<Script>(assetPath);
-            if (script == null)
-            {
-                var scriptText = File.ReadAllText(scriptPath);
-                script = Script.FromScriptText(scriptPath, scriptText);
-            }
-
+            var scriptText = File.ReadAllText(scriptPath);
+            var script = Script.FromScriptText(scriptPath, scriptText);
             if (script == null) throw new Exception($"Failed to load `{scriptPath}` script.");
-            return script;
+            return new ScriptText(script, scriptText);
         }
 
         private IReadOnlyCollection<string> LocateLocalizationsFor (string localPath, bool skipMissing = true)
         {
             if (!Directory.Exists(localeFolderPath)) return new string[0];
 
-            var prefix = localPath.EndsWithFast(scriptFileExtension) ? ScriptsConfiguration.DefaultPathPrefix
-                                                                     : ManagedTextConfiguration.DefaultPathPrefix;
+            var prefix = localPath.EndsWithFast(scriptFileExtension)
+                ? ScriptsConfiguration.DefaultPathPrefix
+                : ManagedTextConfiguration.DefaultPathPrefix;
             var paths = new List<string>();
             foreach (var localeDir in Directory.EnumerateDirectories(localeFolderPath))
             {
@@ -166,11 +161,11 @@ namespace Naninovel.Spreadsheet
             }
             return paths;
         }
-        
+
         private void NotifyProgressChanged (IReadOnlyList<string> paths, int index)
         {
             if (onProgress is null) return;
-            
+
             var path = paths[index];
             var name = path.Contains(sheetPathSeparator) ? path : Path.GetFileNameWithoutExtension(path);
             var progress = index / (float)paths.Count;

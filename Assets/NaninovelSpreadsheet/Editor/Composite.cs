@@ -1,10 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
-using System.Text;
 using System.Text.RegularExpressions;
-using Naninovel.Commands;
 using Naninovel.Lexing;
 using Naninovel.Parsing;
 
@@ -21,6 +18,17 @@ namespace Naninovel.Spreadsheet
 
         private static readonly string[] emptyArgs = new string[0];
         private static Regex argRegex = new Regex(@"(?<!\\)\{(\d+?)(?<!\\)\}", RegexOptions.Compiled);
+        private static readonly ProjectMetadata projectMeta = new ProjectMetadata();
+
+        private readonly Parsing.CommandLineParser commandLineParser = new Parsing.CommandLineParser();
+        private readonly Parsing.GenericTextLineParser genericLineParser = new Parsing.GenericTextLineParser();
+        private readonly List<string> errors = new List<string>();
+
+        static Composite ()
+        {
+            IDEMetadataWindow.GenerateCommandsMetadata(projectMeta, Command.CommandTypes.Values,
+                _ => (null, null, null), _ => null);
+        }
 
         public Composite (string template, IEnumerable<string> args)
         {
@@ -29,9 +37,9 @@ namespace Naninovel.Spreadsheet
             Value = BuildTemplate(Template, Arguments);
         }
 
-        public Composite (ScriptLine scriptLine)
+        public Composite (string lineText, LineType lineType, IReadOnlyList<Token> tokens)
         {
-            (Template, Arguments) = ParseScriptLine(scriptLine);
+            (Template, Arguments) = ParseScriptLine(lineText, lineType, tokens);
             Value = BuildTemplate(Template, Arguments);
         }
 
@@ -57,99 +65,80 @@ namespace Naninovel.Spreadsheet
             return template;
         }
 
-        private static (string template, IReadOnlyList<string> args) ParseScriptLine (ScriptLine line)
+        private (string template, IReadOnlyList<string> args) ParseScriptLine (string lineText, LineType lineType, IReadOnlyList<Token> tokens)
         {
-            if (line is CommandScriptLine commandLine)
-                return ParseCommandLine(commandLine);
-            if (line is GenericTextScriptLine genericLine)
-                return ParseGenericLine(genericLine);
-            if (line is CommentScriptLine commentLine)
-                return ($"{Constants.CommentLineId} {commentLine.CommentText}", emptyArgs);
-            if (line is LabelScriptLine labelLine)
-                return ($"{Constants.LabelLineId} {labelLine.LabelText}", emptyArgs);
-            if (line is EmptyScriptLine emptyLine)
-                return (string.Empty, emptyArgs);
-            throw new Exception($"Unknown command line type: {line.GetType().Name}");
+            errors.Clear();
+            switch (lineType)
+            {
+                case LineType.Label:
+                case LineType.Comment:
+                    return (lineText, emptyArgs);
+                case LineType.Command:
+                    var commandLine = commandLineParser.Parse(lineText, tokens, errors);
+                    if (errors.Count > 0) throw new Exception($"Line `{lineText}` failed to parse: {errors[0]}");
+                    var commandResult = ParseCommandLine(commandLine, lineText);
+                    commandLineParser.ReturnLine(commandLine);
+                    return commandResult;
+                case LineType.GenericText:
+                    var genericLine = genericLineParser.Parse(lineText, tokens, errors);
+                    if (errors.Count > 0) throw new Exception($"Line `{lineText}` failed to parse: {errors[0]}");
+                    var genericResult = ParseGenericLine(genericLine, lineText);
+                    genericLineParser.ReturnLine(genericLine);
+                    return genericResult;
+                default: return (string.Empty, emptyArgs);
+            }
         }
 
-        private static (string template, IReadOnlyList<string> args) ParseCommandLine (CommandScriptLine commandLine)
+        private static (string template, IReadOnlyList<string> args) ParseCommandLine (CommandLine model, string lineText)
         {
-            var (commandTemplate, args) = ParseCommand(commandLine.Command);
+            var (commandTemplate, args) = ParseCommand(model.Command, lineText);
             return (Constants.CommandLineId + commandTemplate, args);
         }
 
-        private static (string template, IReadOnlyList<string> args) ParseCommand (Command command, int argOffset = 0)
+        private static (string template, IReadOnlyList<string> args) ParseCommand (Parsing.Command command, string lineText, int argOffset = 0)
         {
+            var commandMeta = projectMeta.commands.FirstOrDefault(c => (c.id?.EqualsFastIgnoreCase(command.Identifier) ?? false) ||
+                                                                       (c.alias?.EqualsFastIgnoreCase(command.Identifier) ?? false));
+            if (commandMeta is null) throw new Exception($"Unknown command: `{command.Identifier}`");
+            if (!commandMeta.localizable) return (lineText, emptyArgs);
+
             var args = new List<string>();
-            var commandName = command.GetType().GetCustomAttribute<Command.CommandAliasAttribute>()?.Alias ?? command.GetType().Name.FirstToLower();
-            var templateBuilder = new StringBuilder(commandName);
-            var parameterFields = command.GetType().GetFields()
-                .Where(f => typeof(ICommandParameter).IsAssignableFrom(f.FieldType));
-            foreach (var field in parameterFields)
+            foreach (var parameter in command.Parameters)
             {
-                var parameter = field.GetValue(command) as ICommandParameter;
-                if (parameter is null || !Command.Assigned(parameter)) continue;
-
-                var value = Helpers.EncodeValue(parameter.ToString(), true, true);
-                if (field.GetCustomAttribute<Command.ParameterDefaultValueAttribute>()?.Value == value) continue;
-
-                templateBuilder.Append(" ");
-
-                var name = field.GetCustomAttribute<Command.ParameterAliasAttribute>()?.Alias ?? field.Name.FirstToLower();
-                if (name != Command.NamelessParameterAlias)
-                    templateBuilder.Append(name).Append(Constants.ParamAssignId);
-
-                if (Attribute.IsDefined(field, typeof(Command.LocalizableParameterAttribute)))
-                {
-                    args.Add(value);
-                    templateBuilder.Append(BuildPlaceholder(args.Count - 1 + argOffset));
-                }
-                else templateBuilder.Append(value);
+                var meta = commandMeta.@params.FirstOrDefault(c => (c.id?.EqualsFastIgnoreCase(parameter.Identifier) ?? false) ||
+                                                                   (c.alias?.EqualsFastIgnoreCase(parameter.Identifier) ?? false));
+                if (meta is null) throw new Exception($"Unknown parameter in `{command.Identifier}` command: `{parameter.Identifier}`");
+                if (!meta.localizable) continue;
+                args.Add(parameter.Value);
+                var placeholder = BuildPlaceholder(args.Count - 1 + argOffset);
+                lineText = lineText.Remove(parameter.StartIndex, parameter.Length).Insert(parameter.StartIndex, placeholder);
             }
 
-            return (templateBuilder.ToString(), args);
+            return (lineText, args);
         }
 
-        private static (string template, IReadOnlyList<string> args) ParseGenericLine (GenericTextScriptLine line)
+        private static (string template, IReadOnlyList<string> args) ParseGenericLine (GenericTextLine model, string lineText)
         {
             var args = new List<string>();
-            var templateBuilder = new StringBuilder();
+            foreach (var content in model.Content)
+                if (content is Parsing.Command command) ParseInlinedCommand(command);
+                else ParseGenericText(content as GenericText);
 
-            var authorId = line.InlinedCommands.OfType<PrintText>()
-                .FirstOrDefault(p => Command.Assigned(p.AuthorId) && !p.AuthorId.DynamicValue)?.AuthorId.Value;
-            if (!string.IsNullOrEmpty(authorId))
+            void ParseInlinedCommand (Parsing.Command command)
             {
-                templateBuilder.Append(authorId);
-                var appearance = line.InlinedCommands.First() is ModifyCharacter mc
-                                 && Command.Assigned(mc.IdAndAppearance) && !mc.IdAndAppearance.DynamicValue
-                                 && mc.IdAndAppearance.NamedValue.HasValue
-                    ? mc.IdAndAppearance.NamedValue
-                    : null;
-                if (!string.IsNullOrEmpty(appearance))
-                    templateBuilder.Append(Constants.AuthorAppearanceId).Append(appearance);
-                templateBuilder.Append(Constants.AuthorAssignId);
-            }
-
-            for (int i = 0; i < line.InlinedCommands.Count; i++)
-            {
-                var command = line.InlinedCommands[i];
-                if (i == 0 && command is ModifyCharacter) continue;
-
-                if (command is PrintText print)
-                {
-                    args.Add(Helpers.EncodeValue(print.Text.ToString(), true, false));
-                    templateBuilder.Append(BuildPlaceholder(args.Count - 1));
-                    if (print.WaitForInput && i < line.InlinedCommands.Count - 1)
-                        templateBuilder.Append("[i]");
-                    continue;
-                }
-
-                var (commandTemplate, commandArgs) = ParseCommand(command, args.Count);
+                var (template, commandArgs) = ParseCommand(command, lineText, args.Count);
+                lineText = template;
                 args.AddRange(commandArgs);
-                templateBuilder.Append($"[{commandTemplate}]");
             }
 
-            return (templateBuilder.ToString(), args);
+            void ParseGenericText (GenericText text)
+            {
+                var placeholder = BuildPlaceholder(args.Count - 1);
+                lineText = lineText.Remove(text.StartIndex, text.Length).Insert(text.StartIndex, placeholder);
+                args.Add(text.Text);
+            }
+
+            return (lineText, args);
         }
 
         private static (string template, IReadOnlyList<string> args) ParseManagedText (string line)
