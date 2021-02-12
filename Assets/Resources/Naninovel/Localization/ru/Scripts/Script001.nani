@@ -20,6 +20,9 @@ k: Адживика, как принято считать, порождена в
 ; @print "Donec ut libero rutrum, \"porta tortor\" ut, volutpat nulla." speed:0.5 default:false
 @print "Закон исключённого третьего \"перечеркивает\" центральный позитивизм." speed:0.5 default:false
 
+# 4f75e4c2
+; @print \{{ Random(0, 10) }\}
+
 # de2c2a3a
 ; @choice "Test choice" pos:10,50
 @choice "Структурализм изменяем" pos:10,50
