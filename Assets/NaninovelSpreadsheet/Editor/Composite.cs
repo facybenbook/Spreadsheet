@@ -20,7 +20,7 @@ namespace Naninovel.Spreadsheet
         public readonly IReadOnlyList<string> Arguments;
 
         private static readonly string[] emptyArgs = new string[0];
-        private static Regex argRegex = new Regex(@"(?<!\\)\{(\d+?)(?<!\\)\}");
+        private static Regex argRegex = new Regex(@"(?<!\\)\{(\d+?)(?<!\\)\}", RegexOptions.Compiled);
 
         public Composite (string template, IEnumerable<string> args)
         {
