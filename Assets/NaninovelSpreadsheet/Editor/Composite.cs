@@ -137,7 +137,7 @@ namespace Naninovel.Spreadsheet
 
                 if (command is PrintText print)
                 {
-                    args.Add(print.Text.ToString());
+                    args.Add(Helpers.EncodeValue(print.Text.ToString(), true, false));
                     templateBuilder.Append(BuildPlaceholder(args.Count - 1));
                     if (print.WaitForInput && i < line.InlinedCommands.Count - 1)
                         templateBuilder.Append("[i]");
