@@ -53,9 +53,9 @@ SettingsMenu.PreviewText: Lorem ipsum dolor sit amet, consectetur adipiscing eli
 SettingsMenu.Resolution: Resolution:
 SettingsMenu.ScreenMode: Screen mode:
 SettingsMenu.SkipMode: Skip mode:
-SettingsMenu.Tab.Basic: BASIC
-SettingsMenu.Tab.Sound: SOUND
-SettingsMenu.Tab.Text: TEXT
+SettingsMenu.Tab.Basic: ОСНОВНЫЕ
+SettingsMenu.Tab.Sound: ЗВУК
+SettingsMenu.Tab.Text: ТЕКСТ
 SettingsMenu.VoiceLanguage: Voice language:
 SettingsMenu.VolumeEffects: Effects volume:
 SettingsMenu.VolumeMaster: Master volume:
