@@ -64,9 +64,11 @@ namespace Naninovel.Spreadsheet
             if (line is GenericTextScriptLine genericLine)
                 return ParseGenericLine(genericLine);
             if (line is CommentScriptLine commentLine)
-                return (string.IsNullOrEmpty(commentLine.CommentText) ? string.Empty : $"{Constants.CommandLineId} {commentLine.CommentText}", emptyArgs);
+                return ($"{Constants.CommentLineId} {commentLine.CommentText}", emptyArgs);
             if (line is LabelScriptLine labelLine)
                 return ($"{Constants.LabelLineId} {labelLine.LabelText}", emptyArgs);
+            if (line is EmptyScriptLine emptyLine)
+                return (string.Empty, emptyArgs);
             throw new Exception($"Unknown command line type: {line.GetType().Name}");
         }
 

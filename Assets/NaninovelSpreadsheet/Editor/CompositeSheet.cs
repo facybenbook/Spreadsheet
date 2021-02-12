@@ -130,7 +130,7 @@ namespace Naninovel.Spreadsheet
                 var lineHash = CryptoUtils.PersistentHexCode(sourceLine.TrimFull());
                 builder.AppendLine()
                     .AppendLine($"{Constants.LabelLineId} {lineHash}")
-                    .AppendLine($"{Constants.CommandLineId} {sourceLine}");
+                    .AppendLine($"{Constants.CommentLineId} {sourceLine}");
                 if (!localizedArgs.All(string.IsNullOrWhiteSpace))
                     builder.AppendLine(localizedLine);
             }
