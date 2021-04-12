@@ -56,7 +56,7 @@ SettingsMenu.SkipMode: Skip mode:
 SettingsMenu.Tab.Basic: ОСНОВНЫЕ
 SettingsMenu.Tab.Sound: ЗВУК
 SettingsMenu.Tab.Text: ТЕКСТ
-SettingsMenu.VoiceLanguage: Voice language:
+SettingsMenu.VoiceLanguage: Язык озвучки:
 SettingsMenu.VolumeEffects: Effects volume:
 SettingsMenu.VolumeMaster: Master volume:
 SettingsMenu.VolumeMusic: Music volume:
