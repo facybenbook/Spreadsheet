@@ -19,25 +19,25 @@ ExternalScriptsBrowser.Title: EXTERNAL SCRIPTS
 General.Close: CLOSE
 General.Return: RETURN
 Naninovel.UI.ControlPanelTitleButton.ConfirmationMessage: Are you sure you want to quit to the title screen? Any unsaved game progress will be lost.
-Naninovel.UI.GameSettingsFontDropdown.DefaultFontName: Default
-Naninovel.UI.GameSettingsFontSizeDropdown.Default: Default
-Naninovel.UI.GameSettingsFontSizeDropdown.ExtraLarge: Extra Large
-Naninovel.UI.GameSettingsFontSizeDropdown.Large: Large
-Naninovel.UI.GameSettingsFontSizeDropdown.Small: Small
-Naninovel.UI.GameSettingsGraphicsDropdown.GraphicOption1: Very Low
-Naninovel.UI.GameSettingsGraphicsDropdown.GraphicOption2: Low
-Naninovel.UI.GameSettingsGraphicsDropdown.GraphicOption3: Medium
-Naninovel.UI.GameSettingsGraphicsDropdown.GraphicOption4: High
-Naninovel.UI.GameSettingsGraphicsDropdown.GraphicOption5: Very High
-Naninovel.UI.GameSettingsGraphicsDropdown.GraphicOption6: Ultra
+Naninovel.UI.GameSettingsFontDropdown.DefaultFontName: Стандартный
+Naninovel.UI.GameSettingsFontSizeDropdown.Default: Стандартный
+Naninovel.UI.GameSettingsFontSizeDropdown.ExtraLarge: Очень крупный
+Naninovel.UI.GameSettingsFontSizeDropdown.Large: Крупный
+Naninovel.UI.GameSettingsFontSizeDropdown.Small: Мелкий
+Naninovel.UI.GameSettingsGraphicsDropdown.GraphicOption1: Очень низкое
+Naninovel.UI.GameSettingsGraphicsDropdown.GraphicOption2: Низкое
+Naninovel.UI.GameSettingsGraphicsDropdown.GraphicOption3: Среднее
+Naninovel.UI.GameSettingsGraphicsDropdown.GraphicOption4: Высокое
+Naninovel.UI.GameSettingsGraphicsDropdown.GraphicOption5: Очень высокое
+Naninovel.UI.GameSettingsGraphicsDropdown.GraphicOption6: Ультра
 Naninovel.UI.GameSettingsScreenModeDropdown.ExclusiveFullScreen: Full Screen
 Naninovel.UI.GameSettingsScreenModeDropdown.FullScreenWindow: Full Screen Window
 Naninovel.UI.GameSettingsScreenModeDropdown.MaximizedWindow: Maximized Window
 Naninovel.UI.GameSettingsScreenModeDropdown.Windowed: Windowed
-Naninovel.UI.GameSettingsSkipModeDropdown.Everything: Everything
-Naninovel.UI.GameSettingsSkipModeDropdown.ReadOnly: Read Only
+Naninovel.UI.GameSettingsSkipModeDropdown.Everything: Всё
+Naninovel.UI.GameSettingsSkipModeDropdown.ReadOnly: Прочитанное
 Naninovel.UI.GameStateSlot.EmptySlotLabel: Empty
-Naninovel.UI.SaveLoadMenu.DeleteSaveSlotMessage: Are you sure you want to delete save slot?
+Naninovel.UI.SaveLoadMenu.DeleteSaveSlotMessage: Вы уверены что хотите удалить слот сохранения?
 Naninovel.UI.SaveLoadMenu.OverwriteSaveSlotMessage: Are you sure you want to overwrite save slot?
 SaveLoadMenu.Tab.Load: LOAD
 SaveLoadMenu.Tab.QuickLoad: Q. LOAD
