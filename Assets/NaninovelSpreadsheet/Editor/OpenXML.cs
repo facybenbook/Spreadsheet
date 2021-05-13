@@ -8,16 +8,27 @@ using DocumentFormat.OpenXml.Spreadsheet;
 namespace Naninovel.Spreadsheet
 {
     // OpenXML documentation: https://docs.microsoft.com/en-us/office/open-xml/spreadsheets
-    
+
     internal static class OpenXML
     {
+        public static SpreadsheetDocument CreateDocument (string path)
+        {
+            var document = SpreadsheetDocument.Create(path, SpreadsheetDocumentType.Workbook, true);
+            var workbookPart = document.AddWorkbookPart();
+            workbookPart.AddNewPart<WorksheetPart>().Worksheet = new Worksheet(new SheetData());
+            workbookPart.Workbook = new Workbook();
+            workbookPart.Workbook.AppendChild<Sheets>(new Sheets());
+            workbookPart.Workbook.Save();
+            return document;
+        }
+
         public static IEnumerable<Worksheet> GetAllSheets (this SpreadsheetDocument document)
         {
             var workbookPart = document.WorkbookPart;
             return workbookPart.Workbook.Descendants<Sheet>()
                 .Select(s => ((WorksheetPart)workbookPart.GetPartById(s.Id)).Worksheet);
         }
-        
+
         public static IEnumerable<string> GetSheetNames (this SpreadsheetDocument document)
         {
             return document.WorkbookPart.Workbook.Descendants<Sheet>().Select(s => s.Name.Value);
@@ -29,7 +40,7 @@ namespace Naninovel.Spreadsheet
             return document.WorkbookPart.Workbook.Sheets.Elements<Sheet>()
                 .FirstOrDefault(s => s.Id.HasValue && s.Id.Value == relationshipId)?.Name;
         }
-        
+
         public static Worksheet GetSheet (this SpreadsheetDocument document, string sheetName)
         {
             var workbookPart = document.WorkbookPart;
@@ -102,7 +113,7 @@ namespace Naninovel.Spreadsheet
                 var stringTable = document.WorkbookPart.GetPartsOfType<SharedStringTablePart>().FirstOrDefault();
                 return stringTable?.SharedStringTable.ElementAt(int.Parse(cell.InnerText)).InnerText;
             }
-            
+
             return cell.InnerText;
         }
 
@@ -131,7 +142,7 @@ namespace Naninovel.Spreadsheet
             if (rows.Length == 0) return new Cell[0];
             return rows.SelectMany(r => r.Elements<Cell>().Where(c => c.CellReference.Value == columnName + r.RowIndex));
         }
-        
+
         public static void ClearAllCellsInColumn (this Worksheet worksheet, string columnName)
         {
             foreach (var cell in worksheet.GetAllCellsInColumn(columnName))
@@ -169,19 +180,19 @@ namespace Naninovel.Spreadsheet
             }
             return res;
         }
-        
+
         private static int GetOrAddSharedStringItem (SpreadsheetDocument document, string value)
         {
             var sharedStringPart = document.WorkbookPart.GetPartsOfType<SharedStringTablePart>().FirstOrDefault() ??
                                    document.WorkbookPart.AddNewPart<SharedStringTablePart>();
-            
+
             if (sharedStringPart.SharedStringTable is null)
                 sharedStringPart.SharedStringTable = new SharedStringTable();
-                
+
             var itemIndex = 0;
             foreach (var item in sharedStringPart.SharedStringTable.Elements<SharedStringItem>())
             {
-                if (item.InnerText == value) 
+                if (item.InnerText == value)
                     return itemIndex;
                 itemIndex++;
             }
@@ -193,7 +204,7 @@ namespace Naninovel.Spreadsheet
             sharedStringPart.SharedStringTable.Save();
             return itemIndex;
         }
-        
+
         private static Row FindRowBefore (Worksheet worksheet, uint rowNumber)
         {
             var sheetData = worksheet.GetFirstChild<SheetData>();

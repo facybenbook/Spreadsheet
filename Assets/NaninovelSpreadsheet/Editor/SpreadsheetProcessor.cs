@@ -12,20 +12,24 @@ namespace Naninovel.Spreadsheet
         public class Parameters
         {
             public string SpreadsheetPath { get; set; }
+            public bool SingleSpreadsheet { get; set; }
             public string ScriptFolderPath { get; set; }
             public string ManagedTextFolderPath { get; set; }
             public string LocalizationFolderPath { get; set; }
         }
 
+        private const string scriptsCategory = "Scripts";
+        private const string textCategory = "Text";
         private const string sheetPathSeparator = ">";
-        private const string scriptSheetNamePrefix = "Scripts" + sheetPathSeparator;
-        private const string textSheetNamePrefix = "Text" + sheetPathSeparator;
+        private const string scriptSheetNamePrefix = scriptsCategory + sheetPathSeparator;
+        private const string textSheetNamePrefix = textCategory + sheetPathSeparator;
         private const string scriptFileExtension = ".nani";
         private const string textFileExtension = ".txt";
         private const string scriptFilePattern = "*" + scriptFileExtension;
         private const string textFilePattern = "*" + textFileExtension;
 
         private readonly string spreadsheetPath;
+        private readonly bool singleSpreadsheet;
         private readonly string scriptFolderPath;
         private readonly string textFolderPath;
         private readonly string localeFolderPath;
@@ -34,6 +38,7 @@ namespace Naninovel.Spreadsheet
         public SpreadsheetProcessor (Parameters parameters, Action<ProgressChangedArgs> onProgress = default)
         {
             spreadsheetPath = parameters.SpreadsheetPath;
+            singleSpreadsheet = parameters.SingleSpreadsheet;
             scriptFolderPath = parameters.ScriptFolderPath;
             textFolderPath = parameters.ManagedTextFolderPath;
             localeFolderPath = parameters.LocalizationFolderPath;
@@ -42,39 +47,56 @@ namespace Naninovel.Spreadsheet
 
         public void Export ()
         {
-            var document = SpreadsheetDocument.Open(spreadsheetPath, true);
             if (Directory.Exists(scriptFolderPath))
-                ExportScriptsToSpreadsheet(document);
+                ExportScripts();
             if (Directory.Exists(textFolderPath))
-                ExportManagedTextToSpreadsheet(document);
-            document.Dispose();
+                ExportManagedText();
         }
 
         public void Import ()
         {
-            var document = SpreadsheetDocument.Open(spreadsheetPath, false);
-            var sheetsNames = document.GetSheetNames().ToArray();
-            for (int i = 0; i < sheetsNames.Length; i++)
+            var directory = Path.GetDirectoryName(spreadsheetPath);
+            var documentPaths = Directory.GetFiles(directory, "*.xlsx", SearchOption.AllDirectories);
+            for (int i = 0; i < documentPaths.Length; i++)
             {
-                NotifyProgressChanged(sheetsNames, i);
-                var sheetName = sheetsNames[i];
-                var sheet = document.GetSheet(sheetName);
-                var localPath = SheetNameToLocalPath(sheetName);
-                if (localPath is null)
+                var document = SpreadsheetDocument.Open(documentPaths[i], false);
+                var sheetsNames = document.GetSheetNames().ToArray();
+                for (int j = 0; j < sheetsNames.Length; j++)
                 {
-                    Debug.LogWarning($"Sheet `{sheetName}` is unrecognized and will be ignored.");
-                    continue;
+                    if (singleSpreadsheet) NotifyProgressChanged(sheetsNames, j);
+                    else NotifyProgressChanged(documentPaths, i);
+                    ImportSheet(document, sheetsNames[j], documentPaths[i]);
                 }
-                var fullPath = LocalToFullPath(localPath);
-                var localizations = LocateLocalizationsFor(localPath, false);
-                var compositeSheet = new CompositeSheet(document, sheet);
-                var managedText = fullPath.EndsWithFast(textFileExtension);
-                compositeSheet.WriteToProject(fullPath, localizations, managedText);
+                document.Dispose();
             }
-            document.Dispose();
         }
 
-        private void ExportScriptsToSpreadsheet (SpreadsheetDocument document)
+        private void ImportSheet (SpreadsheetDocument document, string sheetName, string docPath)
+        {
+            var sheet = document.GetSheet(sheetName);
+            var localPath = SheetNameToLocalPath(sheetName);
+            if (localPath is null)
+            {
+                Debug.LogWarning($"Sheet `{sheetName}` in `{docPath}` is not recognized and will be ignored.");
+                return;
+            }
+            var fullPath = LocalToFullPath(localPath);
+            var localizations = LocateLocalizationsFor(localPath, false);
+            var compositeSheet = new CompositeSheet(document, sheet);
+            var managedText = fullPath.EndsWithFast(textFileExtension);
+            compositeSheet.WriteToProject(fullPath, localizations, managedText);
+        }
+
+        private SpreadsheetDocument OpenOrCreateDocument (string category, string localPath)
+        {
+            if (singleSpreadsheet) return SpreadsheetDocument.Open(spreadsheetPath, true);
+            var directory = Path.Combine(spreadsheetPath, category, Path.GetDirectoryName(localPath));
+            if (!Directory.Exists(directory)) Directory.CreateDirectory(directory);
+            var path = Path.Combine(directory, Path.GetFileNameWithoutExtension(localPath) + ".xlsx");
+            return OpenXML.CreateDocument(path);
+        }
+
+        private void ExportScripts ()
         {
             var scriptPaths = Directory.GetFiles(scriptFolderPath, scriptFilePattern, SearchOption.AllDirectories);
             for (int pathIndex = 0; pathIndex < scriptPaths.Length; pathIndex++)
@@ -83,14 +105,16 @@ namespace Naninovel.Spreadsheet
                 var scriptPath = scriptPaths[pathIndex];
                 var script = LoadScriptAtPath(scriptPath);
                 var localPath = FullToLocalPath(scriptPath);
+                var document = OpenOrCreateDocument(scriptsCategory, localPath);
                 var sheetName = LocalPathToSheetName(localPath);
                 var sheet = document.GetSheet(sheetName) ?? document.AddSheet(sheetName);
                 var localizations = LocateLocalizationsFor(localPath).Select(LoadScriptAtPath).ToArray();
                 new CompositeSheet(script, localizations).WriteToSpreadsheet(document, sheet);
+                document.Dispose();
             }
         }
 
-        private void ExportManagedTextToSpreadsheet (SpreadsheetDocument document)
+        private void ExportManagedText ()
         {
             var managedTextPaths = Directory.GetFiles(textFolderPath, textFilePattern, SearchOption.AllDirectories);
             for (int pathIndex = 0; pathIndex < managedTextPaths.Length; pathIndex++)
@@ -99,10 +123,12 @@ namespace Naninovel.Spreadsheet
                 var docPath = managedTextPaths[pathIndex];
                 var docText = File.ReadAllText(docPath);
                 var localPath = FullToLocalPath(docPath);
+                var document = OpenOrCreateDocument(textCategory, localPath);
                 var sheetName = LocalPathToSheetName(localPath);
                 var sheet = document.GetSheet(sheetName) ?? document.AddSheet(sheetName);
                 var localizations = LocateLocalizationsFor(localPath).Select(File.ReadAllText).ToArray();
                 new CompositeSheet(docText, localizations).WriteToSpreadsheet(document, sheet);
+                document.Dispose();
             }
         }
 
