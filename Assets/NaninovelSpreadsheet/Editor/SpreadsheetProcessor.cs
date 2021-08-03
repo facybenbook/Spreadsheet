@@ -168,7 +168,7 @@ namespace Naninovel.Spreadsheet
 
         private IReadOnlyCollection<string> LocateLocalizationsFor (string localPath, bool skipMissing = true)
         {
-            if (!Directory.Exists(localeFolderPath)) return new string[0];
+            if (!Directory.Exists(localeFolderPath)) return Array.Empty<string>();
 
             var prefix = localPath.EndsWithFast(scriptFileExtension)
                 ? ScriptsConfiguration.DefaultPathPrefix
