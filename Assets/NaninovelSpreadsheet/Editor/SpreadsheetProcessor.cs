@@ -175,8 +175,8 @@ namespace Naninovel.Spreadsheet
                 : ManagedTextConfiguration.DefaultPathPrefix;
             
             // Localized script resources are flatted in a single folder.
-            // if (localPath.EndsWithFast(scriptFileExtension))
-            //     localPath = Path.GetFileName(localPath);
+            if (localPath.EndsWithFast(scriptFileExtension))
+                localPath = Path.GetFileName(localPath);
             
             var paths = new List<string>();
             foreach (var localeDir in Directory.EnumerateDirectories(localeFolderPath))
