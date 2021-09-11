@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Spreadsheet;
-using Naninovel.Lexing;
+using Naninovel.Parsing;
 using UnityEngine;
 
 namespace Naninovel.Spreadsheet
@@ -131,8 +131,8 @@ namespace Naninovel.Spreadsheet
                 var sourceLine = new Composite(localizableTemplate, sourceArgs).Value;
                 var lineHash = CryptoUtils.PersistentHexCode(sourceLine.TrimFull());
                 builder.AppendLine()
-                    .AppendLine($"{Constants.LabelLineId} {lineHash}")
-                    .AppendLine($"{Constants.CommentLineId} {sourceLine}");
+                    .AppendLine($"{Identifiers.LabelLine} {lineHash}")
+                    .AppendLine($"{Identifiers.CommentLine} {sourceLine}");
                 if (!localizedArgs.All(string.IsNullOrWhiteSpace))
                     builder.AppendLine(localizedLine);
             }

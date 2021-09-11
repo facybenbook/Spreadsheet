@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
-using Naninovel.Lexing;
 using Naninovel.Parsing;
 
 namespace Naninovel.Spreadsheet
@@ -16,8 +15,8 @@ namespace Naninovel.Spreadsheet
         public readonly string Template;
         public readonly IReadOnlyList<string> Arguments;
 
-        private static readonly string[] emptyArgs = new string[0];
-        private static readonly LineText[] emptyLocalizables = new LineText[0];
+        private static readonly string[] emptyArgs = Array.Empty<string>();
+        private static readonly LineText[] emptyLocalizables = Array.Empty<LineText>();
         private static Regex argRegex = new Regex(@"(?<!\\)\{(\d+?)(?<!\\)\}", RegexOptions.Compiled);
         private static readonly ProjectMetadata projectMeta = new ProjectMetadata();
 
