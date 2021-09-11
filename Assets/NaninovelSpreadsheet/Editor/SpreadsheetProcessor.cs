@@ -55,7 +55,7 @@ namespace Naninovel.Spreadsheet
 
         public void Import ()
         {
-            var directory = Path.GetDirectoryName(spreadsheetPath);
+            var directory = singleSpreadsheet ? Path.GetDirectoryName(spreadsheetPath) : spreadsheetPath;
             var documentPaths = Directory.GetFiles(directory, "*.xlsx", SearchOption.AllDirectories);
             for (int i = 0; i < documentPaths.Length; i++)
             {
@@ -173,11 +173,11 @@ namespace Naninovel.Spreadsheet
             var prefix = localPath.EndsWithFast(scriptFileExtension)
                 ? ScriptsConfiguration.DefaultPathPrefix
                 : ManagedTextConfiguration.DefaultPathPrefix;
-            
+
             // Localized script resources are flatted in a single folder.
             if (localPath.EndsWithFast(scriptFileExtension))
                 localPath = Path.GetFileName(localPath);
-            
+
             var paths = new List<string>();
             foreach (var localeDir in Directory.EnumerateDirectories(localeFolderPath))
             {
