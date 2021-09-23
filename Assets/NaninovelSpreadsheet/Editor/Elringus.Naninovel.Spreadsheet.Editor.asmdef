@@ -11,8 +11,8 @@
     "allowUnsafeCode": false,
     "overrideReferences": true,
     "precompiledReferences": [
-        "Naninovel.Lexing.dll",
         "Naninovel.Parsing.dll",
+        "Naninovel.Bridging.dll",
         "DocumentFormat.OpenXml.dll",
         "System.IO.Packaging.dll"
     ],

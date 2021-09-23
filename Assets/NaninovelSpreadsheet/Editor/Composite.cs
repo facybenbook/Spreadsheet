@@ -17,18 +17,12 @@ namespace Naninovel.Spreadsheet
 
         private static readonly string[] emptyArgs = Array.Empty<string>();
         private static readonly LineText[] emptyLocalizables = Array.Empty<LineText>();
-        private static Regex argRegex = new Regex(@"(?<!\\)\{(\d+?)(?<!\\)\}", RegexOptions.Compiled);
-        private static readonly ProjectMetadata projectMeta = new ProjectMetadata();
+        private static readonly Regex argRegex = new Regex(@"(?<!\\)\{(\d+?)(?<!\\)\}", RegexOptions.Compiled);
+        private static readonly Bridging.Command[] metadata = MetadataGenerator.GenerateCommandsMetadata();
 
         private readonly Parsing.CommandLineParser commandLineParser = new Parsing.CommandLineParser();
         private readonly Parsing.GenericTextLineParser genericLineParser = new Parsing.GenericTextLineParser();
         private readonly List<string> errors = new List<string>();
-
-        static Composite ()
-        {
-            IDEMetadataWindow.GenerateCommandsMetadata(projectMeta, Command.CommandTypes.Values,
-                _ => (null, null, null), _ => null);
-        }
 
         public Composite (string template, IEnumerable<string> args)
         {
@@ -97,18 +91,18 @@ namespace Naninovel.Spreadsheet
 
         private static IReadOnlyList<LineText> GetLocalizableParameters (Parsing.Command command)
         {
-            var commandMeta = projectMeta.commands.FirstOrDefault(c => (c.id?.EqualsFastIgnoreCase(command.Identifier) ?? false) ||
-                                                                       (c.alias?.EqualsFastIgnoreCase(command.Identifier) ?? false));
+            var commandMeta = metadata.FirstOrDefault(c => (c.Id?.EqualsFastIgnoreCase(command.Identifier) ?? false) ||
+                                                           (c.Alias?.EqualsFastIgnoreCase(command.Identifier) ?? false));
             if (commandMeta is null) throw new Exception($"Unknown command: `{command.Identifier}`");
-            if (!commandMeta.localizable) return emptyLocalizables;
+            if (!commandMeta.Localizable) return emptyLocalizables;
 
             var localizables = new List<LineText>();
             foreach (var parameter in command.Parameters)
             {
-                var meta = commandMeta.@params.FirstOrDefault(c => (c.id?.EqualsFastIgnoreCase(parameter.Identifier) ?? false) ||
-                                                                   (c.alias?.EqualsFastIgnoreCase(parameter.Identifier) ?? false));
+                var meta = commandMeta.Parameters.FirstOrDefault(c => (c.Id?.EqualsFastIgnoreCase(parameter.Identifier) ?? false) ||
+                                                                   (c.Alias?.EqualsFastIgnoreCase(parameter.Identifier) ?? false));
                 if (meta is null) throw new Exception($"Unknown parameter in `{command.Identifier}` command: `{parameter.Identifier}`");
-                if (meta.localizable) localizables.Add(parameter.Value);
+                if (meta.Localizable) localizables.Add(parameter.Value);
             }
             return localizables;
         }
