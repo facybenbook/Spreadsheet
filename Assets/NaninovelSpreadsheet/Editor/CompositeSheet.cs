@@ -82,7 +82,8 @@ namespace Naninovel.Spreadsheet
 
                 var localizationPath = localizations.FirstOrDefault(p => p.Contains($"/{header}/"));
                 if (localizationPath is null || !File.Exists(localizationPath))
-                    throw new Exception($"Localization document for `{header}` not found. Try re-generating the localization documents.");
+                    throw new Exception($"Localization document `{localizationPath?.GetAfter(Application.dataPath) ?? header}` not found. " +
+                                        $"Try re-generating the localization documents.");
                 var localeHeader = File.ReadAllText(localizationPath).SplitByNewLine()[0];
                 if (managedText) localeHeader += Environment.NewLine;
                 File.WriteAllText(localizationPath, localeHeader + Environment.NewLine + builder);

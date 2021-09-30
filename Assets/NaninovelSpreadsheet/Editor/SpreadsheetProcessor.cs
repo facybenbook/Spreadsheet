@@ -73,13 +73,15 @@ namespace Naninovel.Spreadsheet
 
         private void ImportSheet (SpreadsheetDocument document, string sheetName, string docPath)
         {
-            var sheet = document.GetSheet(sheetName);
-            var localPath = SheetNameToLocalPath(sheetName);
-            if (localPath is null)
+            if (!TryGetCategoryFromSheetName(sheetName, out var category))
             {
                 Debug.LogWarning($"Sheet `{sheetName}` in `{docPath}` is not recognized and will be ignored.");
                 return;
             }
+            var localPath = singleSpreadsheet
+                ? SheetNameToLocalPath(sheetName, category)
+                : DocumentPathToLocalPath(docPath, category);
+            var sheet = document.GetSheet(sheetName);
             var fullPath = LocalToFullPath(localPath);
             var localizations = LocateLocalizationsFor(localPath, false);
             var compositeSheet = new CompositeSheet(document, sheet);
@@ -147,15 +149,38 @@ namespace Naninovel.Spreadsheet
         private string LocalPathToSheetName (string localPath)
         {
             var namePrefix = localPath.EndsWithFast(scriptFileExtension) ? scriptSheetNamePrefix : textSheetNamePrefix;
-            return namePrefix + localPath.Replace("\\", sheetPathSeparator).Replace("/", sheetPathSeparator).GetBeforeLast(".");
+            var name = namePrefix + localPath.Replace("\\", sheetPathSeparator).Replace("/", sheetPathSeparator).GetBeforeLast(".");
+            if (name.Length > 31)
+            {
+                name = name.Substring(0, 31);
+                if (singleSpreadsheet)
+                    throw new FormatException($"Resource `{name}` name is too long, " +
+                                              "Excel doesn't support sheet names longer than 31 characters. " +
+                                              "Either shorten the name or disable `Single Spreadsheet`.");
+            }
+            return name;
         }
 
-        private string SheetNameToLocalPath (string sheetName)
+        private bool TryGetCategoryFromSheetName (string sheetName, out string category)
         {
-            var namePrefix = sheetName.StartsWithFast(scriptSheetNamePrefix) ? scriptSheetNamePrefix : textSheetNamePrefix;
-            if (!sheetName.Contains(namePrefix)) return null;
-            var fileExtension = namePrefix == scriptSheetNamePrefix ? scriptFileExtension : textFileExtension;
-            return sheetName.GetAfterFirst(namePrefix).Replace(sheetPathSeparator, "/") + fileExtension;
+            if (sheetName.StartsWithFast(scriptSheetNamePrefix)) category = scriptsCategory;
+            else if (sheetName.StartsWithFast(textSheetNamePrefix)) category = textCategory;
+            else category = null;
+            return category != null;
+        }
+
+        private string SheetNameToLocalPath (string sheetName, string category)
+        {
+            var fileExtension = category == scriptsCategory ? scriptFileExtension : textFileExtension;
+            return sheetName.GetAfterFirst(sheetPathSeparator).Replace(sheetPathSeparator, "/") + fileExtension;
+        }
+
+        private string DocumentPathToLocalPath (string docPath, string category)
+        {
+            var basePath = Path.Combine(spreadsheetPath, category + "/");
+            var localPath = new Uri(basePath).MakeRelativeUri(new Uri(docPath)).OriginalString;
+            var fileExtension = category == scriptsCategory ? scriptFileExtension : textFileExtension;
+            return localPath.GetBeforeLast(".") + fileExtension;
         }
 
         private ScriptText LoadScriptAtPath (string scriptPath)
