@@ -22,7 +22,7 @@ namespace Naninovel.Spreadsheet
 
         private readonly Parsing.CommandLineParser commandLineParser = new Parsing.CommandLineParser();
         private readonly Parsing.GenericTextLineParser genericLineParser = new Parsing.GenericTextLineParser();
-        private readonly List<string> errors = new List<string>();
+        private readonly List<ParseError> errors = new List<ParseError>();
 
         public Composite (string template, IEnumerable<string> args)
         {

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using Naninovel.Parsing;
 
 namespace Naninovel.Spreadsheet
 {
@@ -13,7 +12,7 @@ namespace Naninovel.Spreadsheet
         public ScriptText (Script script, string scriptText)
         {
             Script = script;
-            TextLines = Helpers.SplitScriptText(scriptText);
+            TextLines = Parsing.ScriptParser.SplitText(scriptText);
             if (Script.Lines.Count != TextLines.Count)
                 throw new Exception($"Failed to parse `{Script.name}` script: line count is not equal.");
         }
