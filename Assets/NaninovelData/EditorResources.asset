@@ -150,6 +150,9 @@ MonoBehaviour:
     - name: PauseUI
       pathPrefix: UI
       guid: 480f5db62ea305c46b89a86496d2a0c9
+    - name: ToastUI
+      pathPrefix: UI
+      guid: dd85ce99288c2f8488447fa511b1c0d6
   - Id: Scripts
     Resources:
     - name: Script001
