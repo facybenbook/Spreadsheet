@@ -19,4 +19,6 @@ k: Ut et quam a dui imperdiet eleifend vitae eget neque.[i] Vestibulum sollicitu
 @despawn Rain wait:false
 y.Default: Donec ligula nulla, pulvinar a ex suscipit, gravida vulputate orci. Maecenas suscipit nisl vel nibh volutpat varius. Vestibulum turpis sapien, fermentum in tempor in, venenatis vel sapien.
 
+Value of t_Foo: {t_Foo}, value of t_Bar: {t_Bar}.
+
 @goto Script002

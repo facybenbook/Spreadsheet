@@ -22,6 +22,7 @@ k: 済供際ナ社県わさ真囲イ須生備ミ京5準[i]ネユホ刺三進ょ�
 
 # 3048f17e
 ; @print "\{ { Random(0, 10) } \}"
+@print "\{ { Random(0, 10) } \}"
 
 # ded9dad7
 ; @toast "Lorem ipsum" time:1
@@ -34,3 +35,7 @@ k: 済供際ナ社県わさ真囲イ須生備ミ京5準[i]ネユホ刺三進ょ�
 # fc0c5eab
 ; y.Default: Donec ligula nulla, pulvinar a ex suscipit, gravida vulputate orci. Maecenas suscipit nisl vel nibh volutpat varius. Vestibulum turpis sapien, fermentum in tempor in, venenatis vel sapien.
 y.Default: 話声コ真禁選またでば車地ょにべ学裏モヒヘ量併ろてう江供ユネスナ止人エケラナ下月京ど新84郷たリ秘最ヲラレ刊行ほひ風国つみしろ馬証ウテ皇馬るぶ。
+
+# a0a5360c
+; Value of t_Foo: {t_Foo}, value of t_Bar: {t_Bar}.
+ t_Foo の値: {t_Foo},  t_Bar の値: {t_Bar}.

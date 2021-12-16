@@ -1,0 +1,4 @@
+; English <en> to Русский <ru> localization document for `Script` managed text document
+
+t_Foo: Фу
+t_Bar: Бар

@@ -22,6 +22,7 @@ k: Адживика, как принято считать, порождена в
 
 # 3048f17e
 ; @print "\{ { Random(0, 10) } \}"
+@print "\{ { Random(0, 10) } \}"
 
 # ded9dad7
 ; @toast "Lorem ipsum" time:1
@@ -34,3 +35,7 @@ k: Адживика, как принято считать, порождена в
 # fc0c5eab
 ; y.Default: Donec ligula nulla, pulvinar a ex suscipit, gravida vulputate orci. Maecenas suscipit nisl vel nibh volutpat varius. Vestibulum turpis sapien, fermentum in tempor in, venenatis vel sapien.
 y.Default: Страсть ищет гравитационный парадокс. Юлианская дата наблюдаема. Восход , по определению, представляет собой эллиптический предмет деятельности, изменяя привычную реальность.
+
+# a0a5360c
+; Value of t_Foo: {t_Foo}, value of t_Bar: {t_Bar}.
+Значение t_Foo: {t_Foo}, значениеf t_Bar: {t_Bar}.

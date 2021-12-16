@@ -1,0 +1,4 @@
+; English <en> to Japanese <ja> localization document for `Script` managed text document
+
+t_Foo: ふぉお
+t_Bar: ばら
