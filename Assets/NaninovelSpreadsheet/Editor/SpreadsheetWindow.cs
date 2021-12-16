@@ -29,7 +29,7 @@ namespace Naninovel.Spreadsheet
             LocalizationFolderPath = localizationFolderPath
         };
         
-        private bool pathsValid = false;
+        private bool pathsValid;
         
         [MenuItem("Naninovel/Tools/Spreadsheet")]
         private static void OpenWindow ()

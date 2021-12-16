@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -38,10 +37,11 @@ namespace Naninovel
         private const string prefsPrefix = "PackageExporter.";
         private const string autoRefreshKey = "kAutoRefresh";
         private const string defaultLicenseFileName = "LICENSE";
+        private const char newLine = '\n';
 
         private static Dictionary<string, string> modifiedScripts = new Dictionary<string, string>();
         private static List<UnityEngine.Object> ignoredAssets = new List<UnityEngine.Object>();
-        private static SceneSetup[] sceneSetup = null;
+        private static SceneSetup[] sceneSetup;
 
         public static void AddIgnoredAsset (string assetPath)
         {
@@ -231,12 +231,14 @@ namespace Naninovel
 
                     var copyright = string.IsNullOrEmpty(Copyright) ? string.Empty : "// " + Copyright;
                     if (!string.IsNullOrEmpty(copyright))
-                        scriptText += copyright + Environment.NewLine + Environment.NewLine;
+                        scriptText += copyright + newLine + newLine;
 
                     scriptText += originalScriptText;
 
                     if (!string.IsNullOrEmpty(OverrideNamespace))
-                        scriptText = scriptText.Replace($"namespace {PackageName}{Environment.NewLine}{{", $"namespace {OverrideNamespace}{Environment.NewLine}{{");
+                        scriptText = scriptText
+                            .Replace($"namespace {PackageName}", $"namespace {OverrideNamespace}")
+                            .Replace($"using {PackageName}", $"using {OverrideNamespace}");
 
                     File.WriteAllText(fullPath, scriptText);
 
@@ -261,7 +263,7 @@ namespace Naninovel
                         .Select(d => d.FullName).ToList();
                     var packageFiles = sourceDir.GetFiles("*.*", SearchOption.AllDirectories)
                         .Where(f => (f.Attributes & FileAttributes.Hidden) == 0 &&
-                        !hiddenFolders.Any(d => f.FullName.StartsWith(d))).ToList();
+                                    !hiddenFolders.Any(d => f.FullName.StartsWith(d))).ToList();
 
                     foreach (var packageFile in packageFiles)
                     {

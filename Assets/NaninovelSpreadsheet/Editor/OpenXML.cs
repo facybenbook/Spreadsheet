@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
@@ -11,6 +12,12 @@ namespace Naninovel.Spreadsheet
 
     internal static class OpenXML
     {
+        public static SpreadsheetDocument OpenDocument (string path, bool editable)
+        {
+            try { return SpreadsheetDocument.Open(path, editable); }
+            catch (IOException) { throw new IOException($"Failed to open '{path}'. Make sure it's not opened in another program (eg, Excel)."); }
+        }
+
         public static SpreadsheetDocument CreateDocument (string path)
         {
             var document = SpreadsheetDocument.Create(path, SpreadsheetDocumentType.Workbook, true);

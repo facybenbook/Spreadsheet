@@ -59,7 +59,7 @@ namespace Naninovel.Spreadsheet
             var documentPaths = Directory.GetFiles(directory, "*.xlsx", SearchOption.AllDirectories);
             for (int i = 0; i < documentPaths.Length; i++)
             {
-                var document = SpreadsheetDocument.Open(documentPaths[i], false);
+                var document = OpenXML.OpenDocument(documentPaths[i], false);
                 var sheetsNames = document.GetSheetNames().ToArray();
                 for (int j = 0; j < sheetsNames.Length; j++)
                 {
@@ -91,7 +91,7 @@ namespace Naninovel.Spreadsheet
 
         private SpreadsheetDocument OpenOrCreateDocument (string category, string localPath)
         {
-            if (singleSpreadsheet) return SpreadsheetDocument.Open(spreadsheetPath, true);
+            if (singleSpreadsheet) return OpenXML.OpenDocument(spreadsheetPath, true);
             var directory = Path.Combine(spreadsheetPath, category, Path.GetDirectoryName(localPath));
             if (!Directory.Exists(directory)) Directory.CreateDirectory(directory);
             var path = Path.Combine(directory, Path.GetFileNameWithoutExtension(localPath) + ".xlsx");
