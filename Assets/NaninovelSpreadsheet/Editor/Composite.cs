@@ -18,7 +18,7 @@ namespace Naninovel.Spreadsheet
         private static readonly string[] emptyArgs = Array.Empty<string>();
         private static readonly LineText[] emptyLocalizables = Array.Empty<LineText>();
         private static readonly Regex argRegex = new Regex(@"(?<!\\)\{(\d+?)(?<!\\)\}", RegexOptions.Compiled);
-        private static readonly Bridging.Command[] metadata = MetadataGenerator.GenerateCommandsMetadata();
+        private static readonly Bridging.Messages.Command[] metadata = MetadataGenerator.GenerateCommandsMetadata();
 
         private readonly Parsing.CommandLineParser commandLineParser = new Parsing.CommandLineParser();
         private readonly Parsing.GenericTextLineParser genericLineParser = new Parsing.GenericTextLineParser();
@@ -100,7 +100,7 @@ namespace Naninovel.Spreadsheet
             foreach (var parameter in command.Parameters)
             {
                 var meta = commandMeta.Parameters.FirstOrDefault(c => (c.Id?.EqualsFastIgnoreCase(parameter.Identifier) ?? false) ||
-                                                                   (c.Alias?.EqualsFastIgnoreCase(parameter.Identifier) ?? false));
+                                                                      (c.Alias?.EqualsFastIgnoreCase(parameter.Identifier) ?? false));
                 if (meta is null) throw new Exception($"Unknown parameter in `{command.Identifier}` command: `{parameter.Identifier}`");
                 if (meta.Localizable) localizables.Add(parameter.Value);
             }
@@ -111,8 +111,8 @@ namespace Naninovel.Spreadsheet
         {
             var localizables = new List<LineText>();
             foreach (var content in line.Content)
-                if (content is Parsing.Command command)
-                    localizables.AddRange(GetLocalizableParameters(command));
+                if (content is InlinedCommand inlined)
+                    localizables.AddRange(GetLocalizableParameters(inlined.Command));
                 else localizables.Add(content as GenericText);
             return ParseLocalizables(localizables, lineText);
         }

@@ -13,6 +13,7 @@
     "precompiledReferences": [
         "Naninovel.Parsing.dll",
         "Naninovel.Bridging.dll",
+        "Naninovel.Bridging.Messages.dll",
         "DocumentFormat.OpenXml.dll",
         "System.IO.Packaging.dll"
     ],
