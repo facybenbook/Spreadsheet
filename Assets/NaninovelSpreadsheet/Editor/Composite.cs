@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
+using Naninovel.Metadata;
 using Naninovel.Parsing;
 
 namespace Naninovel.Spreadsheet
@@ -18,7 +19,7 @@ namespace Naninovel.Spreadsheet
         private static readonly string[] emptyArgs = Array.Empty<string>();
         private static readonly LineText[] emptyLocalizables = Array.Empty<LineText>();
         private static readonly Regex argRegex = new Regex(@"(?<!\\)\{(\d+?)(?<!\\)\}", RegexOptions.Compiled);
-        private static readonly Bridging.Messages.Command[] metadata = MetadataGenerator.GenerateCommandsMetadata();
+        private static readonly MetadataProvider meta = CreateMetaProvider();
 
         private readonly Parsing.CommandLineParser commandLineParser = new Parsing.CommandLineParser();
         private readonly Parsing.GenericTextLineParser genericLineParser = new Parsing.GenericTextLineParser();
@@ -41,6 +42,13 @@ namespace Naninovel.Spreadsheet
         {
             Value = managedTextLine;
             (Template, Arguments) = ParseManagedText(managedTextLine);
+        }
+
+        private static MetadataProvider CreateMetaProvider ()
+        {
+            var commands = MetadataGenerator.GenerateCommandsMetadata();
+            var project = new Project { Commands = commands };
+            return new MetadataProvider(project);
         }
 
         private static string BuildPlaceholder (int index) => $"{{{index}}}";
@@ -91,8 +99,7 @@ namespace Naninovel.Spreadsheet
 
         private static IReadOnlyList<LineText> GetLocalizableParameters (Parsing.Command command)
         {
-            var commandMeta = metadata.FirstOrDefault(c => (c.Id?.EqualsFastIgnoreCase(command.Identifier) ?? false) ||
-                                                           (c.Alias?.EqualsFastIgnoreCase(command.Identifier) ?? false));
+            var commandMeta = meta.FindCommand(command.Identifier);
             if (commandMeta is null) throw new Exception($"Unknown command: `{command.Identifier}`");
             if (!commandMeta.Localizable) return emptyLocalizables;
 
