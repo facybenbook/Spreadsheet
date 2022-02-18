@@ -11,9 +11,7 @@
     "allowUnsafeCode": false,
     "overrideReferences": true,
     "precompiledReferences": [
-        "Naninovel.Parsing.dll",
-        "Naninovel.Bridging.dll",
-        "Naninovel.Metadata.dll",
+        "Naninovel.Common.dll",
         "DocumentFormat.OpenXml.dll",
         "System.IO.Packaging.dll"
     ],
