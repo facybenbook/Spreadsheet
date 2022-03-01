@@ -15,7 +15,7 @@
         "DocumentFormat.OpenXml.dll",
         "System.IO.Packaging.dll"
     ],
-    "autoReferenced": false,
+    "autoReferenced": true,
     "defineConstraints": [],
     "versionDefines": [],
     "noEngineReferences": false

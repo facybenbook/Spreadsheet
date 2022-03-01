@@ -35,7 +35,7 @@ namespace Naninovel.Spreadsheet
         private readonly string localeFolderPath;
         private readonly Action<ProgressChangedArgs> onProgress;
 
-        public SpreadsheetProcessor (Parameters parameters, Action<ProgressChangedArgs> onProgress = default)
+        public SpreadsheetProcessor (Parameters parameters, Action<ProgressChangedArgs> onProgress)
         {
             spreadsheetPath = parameters.SpreadsheetPath;
             singleSpreadsheet = parameters.SingleSpreadsheet;

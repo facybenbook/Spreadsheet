@@ -1,4 +1,6 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using UnityEditor;
 using UnityEngine;
@@ -7,8 +9,8 @@ namespace Naninovel.Spreadsheet
 {
     public class SpreadsheetWindow : EditorWindow
     {
-        private string spreadsheetPath { get => PlayerPrefs.GetString(GetPrefName()); set { PlayerPrefs.SetString(GetPrefName(), value); ValidatePaths(); } }
-        private bool singleSpreadsheet { get => PlayerPrefs.GetInt(GetPrefName(), 0) == 1; set { PlayerPrefs.SetInt(GetPrefName(), value ? 1 : 0); ValidatePaths(); } }
+        private string spreadsheetPath { get => PlayerPrefs.GetString(GetPrefName()); set => DoAndValidatePaths(() => PlayerPrefs.SetString(GetPrefName(), value)); }
+        private bool singleSpreadsheet { get => PlayerPrefs.GetInt(GetPrefName(), 0) == 1; set => DoAndValidatePaths(() => PlayerPrefs.SetInt(GetPrefName(), value ? 1 : 0)); }
         private string scriptFolderPath { get => PlayerPrefs.GetString(GetPrefName()); set => PlayerPrefs.SetString(GetPrefName(), value); }
         private string managedTextFolderPath { get => PlayerPrefs.GetString(GetPrefName()); set => PlayerPrefs.SetString(GetPrefName(), value); }
         private string localizationFolderPath { get => PlayerPrefs.GetString(GetPrefName()); set => PlayerPrefs.SetString(GetPrefName(), value); }
@@ -20,28 +22,33 @@ namespace Naninovel.Spreadsheet
         private static readonly GUIContent textFolderPathContent = new GUIContent("Managed Text", "Folder containing managed text files (optional).");
         private static readonly GUIContent localizationFolderPathContent = new GUIContent("Localization", "Folder containing localization resources (optional).");
 
-        private SpreadsheetProcessor.Parameters Parameters => new SpreadsheetProcessor.Parameters
-        {
+        private SpreadsheetProcessor.Parameters Parameters => new SpreadsheetProcessor.Parameters {
             SpreadsheetPath = spreadsheetPath,
             SingleSpreadsheet = singleSpreadsheet,
             ScriptFolderPath = scriptFolderPath,
             ManagedTextFolderPath = managedTextFolderPath,
             LocalizationFolderPath = localizationFolderPath
         };
-        
+
         private bool pathsValid;
-        
+
         [MenuItem("Naninovel/Tools/Spreadsheet")]
         private static void OpenWindow ()
         {
             var position = new Rect(100, 100, 500, 210);
             GetWindowWithRect<SpreadsheetWindow>(position, true, "Spreadsheet", true);
         }
-        
+
         private static string GetPrefName ([CallerMemberName] string name = "") => $"Naninovel.{nameof(SpreadsheetWindow)}.{name}";
 
         private void OnEnable ()
         {
+            ValidatePaths();
+        }
+
+        private void DoAndValidatePaths (Action action)
+        {
+            action();
             ValidatePaths();
         }
 
@@ -89,7 +96,7 @@ namespace Naninovel.Spreadsheet
             {
                 if (GUILayout.Button("Export", GUIStyles.NavigationButton))
                     Export();
-                
+
                 if (GUILayout.Button("Import", GUIStyles.NavigationButton))
                     Import();
             }
@@ -98,7 +105,7 @@ namespace Naninovel.Spreadsheet
 
             EditorGUILayout.Space();
         }
-        
+
         private void ValidatePaths ()
         {
             if (singleSpreadsheet)
@@ -109,29 +116,39 @@ namespace Naninovel.Spreadsheet
         private void Export ()
         {
             if (!EditorUtility.DisplayDialog("Export data to spreadsheet?",
-                "Are you sure you want to export the scenario scripts, managed text and localization data to spreadsheets?\n\nThe spreadsheets content will be overwritten, existing data could be lost. The effect of this action is permanent and can't be undone, so make sure to backup the spreadsheet file before confirming.\n\nIn case a spreadsheet is currently open in another program, close the program before proceeding.", "Export", "Cancel")) return;
-
+                    "Are you sure you want to export the scenario scripts, managed text and localization data to spreadsheets?\n\n" +
+                    "The spreadsheets content will be overwritten, existing data could be lost. The effect of this action is permanent and can't be undone, so make sure to backup the spreadsheet file before confirming.\n\n" +
+                    "In case a spreadsheet is currently open in another program, close the program before proceeding.", "Export", "Cancel")) return;
             try
             {
-                var processor = new SpreadsheetProcessor(Parameters, 
+                var processor = CreateProcessor(Parameters,
                     p => EditorUtility.DisplayProgressBar("Exporting Naninovel Scripts", p.Info, p.Progress));
                 processor.Export();
             }
             finally { EditorUtility.ClearProgressBar(); }
         }
-        
+
         private void Import ()
         {
             if (!EditorUtility.DisplayDialog("Import data from spreadsheet?",
-                "Are you sure you want to import the spreadsheets data to this project?\n\nAffected scenario scripts, managed text and localization documents will be overwritten, existing data could be lost. The effect of this action is permanent and can't be undone, so make sure to backup the project before confirming.\n\nIn case a spreadsheet is currently open in another program, close the program before proceeding.", "Import", "Cancel")) return;
-            
+                    "Are you sure you want to import the spreadsheets data to this project?\n\n" +
+                    "Affected scenario scripts, managed text and localization documents will be overwritten, existing data could be lost. The effect of this action is permanent and can't be undone, so make sure to backup the project before confirming.\n\n" +
+                    "In case a spreadsheet is currently open in another program, close the program before proceeding.", "Import", "Cancel")) return;
             try
             {
-                var processor = new SpreadsheetProcessor(Parameters, 
+                var processor = CreateProcessor(Parameters,
                     p => EditorUtility.DisplayProgressBar("Importing Naninovel Scripts", p.Info, p.Progress));
                 processor.Import();
             }
             finally { EditorUtility.ClearProgressBar(); }
+        }
+
+        private SpreadsheetProcessor CreateProcessor (SpreadsheetProcessor.Parameters parameters, Action<ProgressChangedArgs> onProgress)
+        {
+            var customType = TypeCache.GetTypesWithAttribute<SpreadsheetProcessorAttribute>().FirstOrDefault();
+            if (customType is null) return new SpreadsheetProcessor(parameters, onProgress);
+            try { return (SpreadsheetProcessor)Activator.CreateInstance(customType, parameters, onProgress); }
+            catch (Exception e) { throw new Error($"Custom processor `{customType.Name}` is invalid: {e.Message}"); }
         }
     }
 }
