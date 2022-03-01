@@ -77,13 +77,13 @@ namespace Naninovel.Spreadsheet
                     return (lineText, emptyArgs);
                 case LineType.Command:
                     var commandLine = commandLineParser.Parse(lineText, tokens, errors);
-                    if (errors.Count > 0) throw new Exception($"Line `{lineText}` failed to parse: {errors[0]}");
+                    if (errors.Count > 0) throw new Error($"Line `{lineText}` failed to parse: {errors[0]}");
                     var commandResult = ParseCommandLine(commandLine, lineText);
                     commandLineParser.ReturnLine(commandLine);
                     return commandResult;
                 case LineType.GenericText:
                     var genericLine = genericLineParser.Parse(lineText, tokens, errors);
-                    if (errors.Count > 0) throw new Exception($"Line `{lineText}` failed to parse: {errors[0]}");
+                    if (errors.Count > 0) throw new Error($"Line `{lineText}` failed to parse: {errors[0]}");
                     var genericResult = ParseGenericLine(genericLine, lineText);
                     genericLineParser.ReturnLine(genericLine);
                     return genericResult;
@@ -100,7 +100,7 @@ namespace Naninovel.Spreadsheet
         private static IReadOnlyList<LineText> GetLocalizableParameters (Parsing.Command command)
         {
             var commandMeta = meta.FindCommand(command.Identifier);
-            if (commandMeta is null) throw new Exception($"Unknown command: `{command.Identifier}`");
+            if (commandMeta is null) throw new Error($"Unknown command: `{command.Identifier}`");
             if (!commandMeta.Localizable) return emptyLocalizables;
 
             var localizables = new List<LineText>();
@@ -108,7 +108,7 @@ namespace Naninovel.Spreadsheet
             {
                 var meta = commandMeta.Parameters.FirstOrDefault(c => (c.Id?.EqualsFastIgnoreCase(parameter.Identifier) ?? false) ||
                                                                       (c.Alias?.EqualsFastIgnoreCase(parameter.Identifier) ?? false));
-                if (meta is null) throw new Exception($"Unknown parameter in `{command.Identifier}` command: `{parameter.Identifier}`");
+                if (meta is null) throw new Error($"Unknown parameter in `{command.Identifier}` command: `{parameter.Identifier}`");
                 if (meta.Localizable) localizables.Add(parameter.Value);
             }
             return localizables;

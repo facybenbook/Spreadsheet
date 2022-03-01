@@ -45,7 +45,7 @@ namespace Naninovel.Spreadsheet
             this.onProgress = onProgress;
         }
 
-        public void Export ()
+        public virtual void Export ()
         {
             if (Directory.Exists(scriptFolderPath))
                 ExportScripts();
@@ -53,7 +53,7 @@ namespace Naninovel.Spreadsheet
                 ExportManagedText();
         }
 
-        public void Import ()
+        public virtual void Import ()
         {
             var directory = singleSpreadsheet ? Path.GetDirectoryName(spreadsheetPath) : spreadsheetPath;
             var documentPaths = Directory.GetFiles(directory, "*.xlsx", SearchOption.AllDirectories);
@@ -71,7 +71,32 @@ namespace Naninovel.Spreadsheet
             }
         }
 
-        private void ImportSheet (SpreadsheetDocument document, string sheetName, string docPath)
+        protected virtual ProjectWriter CreateProjectWriter (CompositeSheet composite)
+        {
+            return new ProjectWriter(composite);
+        }
+
+        protected virtual SpreadsheetWriter CreateSpreadsheetWriter (CompositeSheet composite)
+        {
+            return new SpreadsheetWriter(composite);
+        }
+
+        protected virtual SpreadsheetReader CreateSpreadsheetReader (CompositeSheet composite)
+        {
+            return new SpreadsheetReader(composite);
+        }
+
+        protected virtual ScriptReader CreateScriptReader (CompositeSheet composite)
+        {
+            return new ScriptReader(composite);
+        }
+
+        protected virtual ManagedTextReader CreateManagedTextReader (CompositeSheet composite)
+        {
+            return new ManagedTextReader(composite);
+        }
+
+        protected virtual void ImportSheet (SpreadsheetDocument document, string sheetName, string docPath)
         {
             if (!TryGetCategoryFromSheetName(sheetName, out var category))
             {
@@ -84,12 +109,12 @@ namespace Naninovel.Spreadsheet
             var sheet = document.GetSheet(sheetName);
             var fullPath = LocalToFullPath(localPath);
             var localizations = LocateLocalizationsFor(localPath, false);
-            var compositeSheet = new CompositeSheet(document, sheet);
-            var managedText = fullPath.EndsWithFast(textFileExtension);
-            compositeSheet.WriteToProject(fullPath, localizations, managedText);
+            var composite = new CompositeSheet();
+            CreateSpreadsheetReader(composite).Read(document, sheet);
+            CreateProjectWriter(composite).Write(fullPath, localizations, IsManagedText(fullPath));
         }
 
-        private SpreadsheetDocument OpenOrCreateDocument (string category, string localPath)
+        protected virtual SpreadsheetDocument OpenOrCreateDocument (string category, string localPath)
         {
             if (singleSpreadsheet) return OpenXML.OpenDocument(spreadsheetPath, true);
             var directory = Path.Combine(spreadsheetPath, category, Path.GetDirectoryName(localPath));
@@ -98,7 +123,7 @@ namespace Naninovel.Spreadsheet
             return OpenXML.CreateDocument(path);
         }
 
-        private void ExportScripts ()
+        protected virtual void ExportScripts ()
         {
             var scriptPaths = Directory.GetFiles(scriptFolderPath, scriptFilePattern, SearchOption.AllDirectories);
             for (int pathIndex = 0; pathIndex < scriptPaths.Length; pathIndex++)
@@ -111,12 +136,14 @@ namespace Naninovel.Spreadsheet
                 var sheetName = LocalPathToSheetName(localPath);
                 var sheet = document.GetSheet(sheetName) ?? document.AddSheet(sheetName);
                 var localizations = LocateLocalizationsFor(localPath).Select(LoadScriptAtPath).ToArray();
-                new CompositeSheet(script, localizations).WriteToSpreadsheet(document, sheet);
+                var composite = new CompositeSheet();
+                CreateScriptReader(composite).Read(script, localizations);
+                CreateSpreadsheetWriter(composite).Write(document, sheet);
                 document.Dispose();
             }
         }
 
-        private void ExportManagedText ()
+        protected virtual void ExportManagedText ()
         {
             var managedTextPaths = Directory.GetFiles(textFolderPath, textFilePattern, SearchOption.AllDirectories);
             for (int pathIndex = 0; pathIndex < managedTextPaths.Length; pathIndex++)
@@ -129,24 +156,26 @@ namespace Naninovel.Spreadsheet
                 var sheetName = LocalPathToSheetName(localPath);
                 var sheet = document.GetSheet(sheetName) ?? document.AddSheet(sheetName);
                 var localizations = LocateLocalizationsFor(localPath).Select(File.ReadAllText).ToArray();
-                new CompositeSheet(docText, localizations).WriteToSpreadsheet(document, sheet);
+                var composite = new CompositeSheet();
+                CreateManagedTextReader(composite).Read(docText, localizations);
+                CreateSpreadsheetWriter(composite).Write(document, sheet);
                 document.Dispose();
             }
         }
 
-        private string FullToLocalPath (string fullPath)
+        protected virtual string FullToLocalPath (string fullPath)
         {
             var prefix = fullPath.EndsWithFast(scriptFileExtension) ? scriptFolderPath : textFolderPath;
             return fullPath.Remove(prefix).TrimStart('\\').TrimStart('/');
         }
 
-        private string LocalToFullPath (string localPath)
+        protected virtual string LocalToFullPath (string localPath)
         {
             var prefix = localPath.EndsWithFast(scriptFileExtension) ? scriptFolderPath : textFolderPath;
             return $"{prefix}/{localPath}";
         }
 
-        private string LocalPathToSheetName (string localPath)
+        protected virtual string LocalPathToSheetName (string localPath)
         {
             var namePrefix = localPath.EndsWithFast(scriptFileExtension) ? scriptSheetNamePrefix : textSheetNamePrefix;
             var name = namePrefix + localPath.Replace("\\", sheetPathSeparator).Replace("/", sheetPathSeparator).GetBeforeLast(".");
@@ -161,7 +190,7 @@ namespace Naninovel.Spreadsheet
             return name;
         }
 
-        private bool TryGetCategoryFromSheetName (string sheetName, out string category)
+        protected virtual bool TryGetCategoryFromSheetName (string sheetName, out string category)
         {
             if (sheetName.StartsWithFast(scriptSheetNamePrefix)) category = scriptsCategory;
             else if (sheetName.StartsWithFast(textSheetNamePrefix)) category = textCategory;
@@ -169,13 +198,13 @@ namespace Naninovel.Spreadsheet
             return category != null;
         }
 
-        private string SheetNameToLocalPath (string sheetName, string category)
+        protected virtual string SheetNameToLocalPath (string sheetName, string category)
         {
             var fileExtension = category == scriptsCategory ? scriptFileExtension : textFileExtension;
             return sheetName.GetAfterFirst(sheetPathSeparator).Replace(sheetPathSeparator, "/") + fileExtension;
         }
 
-        private string DocumentPathToLocalPath (string docPath, string category)
+        protected virtual string DocumentPathToLocalPath (string docPath, string category)
         {
             var basePath = Path.Combine(spreadsheetPath, category + "/");
             var localPath = new Uri(basePath).MakeRelativeUri(new Uri(docPath)).OriginalString;
@@ -183,15 +212,15 @@ namespace Naninovel.Spreadsheet
             return localPath.GetBeforeLast(".") + fileExtension;
         }
 
-        private ScriptText LoadScriptAtPath (string scriptPath)
+        protected virtual ScriptText LoadScriptAtPath (string scriptPath)
         {
             var scriptText = File.ReadAllText(scriptPath);
             var script = Script.FromScriptText(scriptPath, scriptText);
-            if (script == null) throw new Exception($"Failed to load `{scriptPath}` script.");
+            if (script == null) throw new Error($"Failed to load `{scriptPath}` script.");
             return new ScriptText(script, scriptText);
         }
 
-        private IReadOnlyCollection<string> LocateLocalizationsFor (string localPath, bool skipMissing = true)
+        protected virtual IReadOnlyCollection<string> LocateLocalizationsFor (string localPath, bool skipMissing = true)
         {
             if (!Directory.Exists(localeFolderPath)) return Array.Empty<string>();
 
@@ -217,7 +246,7 @@ namespace Naninovel.Spreadsheet
             return paths;
         }
 
-        private void NotifyProgressChanged (IReadOnlyList<string> paths, int index)
+        protected virtual void NotifyProgressChanged (IReadOnlyList<string> paths, int index)
         {
             if (onProgress is null) return;
 
@@ -227,6 +256,11 @@ namespace Naninovel.Spreadsheet
             var info = $"Processing `{name}`...";
             var args = new ProgressChangedArgs(info, progress);
             onProgress.Invoke(args);
+        }
+
+        protected virtual bool IsManagedText (string fullPath)
+        {
+            return fullPath.EndsWithFast(textFileExtension);
         }
     }
 }
